@@ -1,4 +1,20 @@
+import { APP_CONFIG } from '../config';
 import { t } from './i18n';
+
+/** Reject base64 / data URIs — email clients can't render them and they bloat email size.
+ *  Returns the logo URL if it's a valid public http(s) URL, otherwise null so the
+ *  template can fall back to a text logo instead of a broken image.
+ */
+const resolveLogoUrl = (logoUrl?: string, fallbackPath?: string): string | null => {
+    // Prefer local fallback image (new provided logos) over admin dashboard URLs
+    const base = APP_CONFIG.SITE_URL || '';
+    const path = fallbackPath || '';
+    if (base && path) {
+        return base.replace(/\/$/, '') + (path.startsWith('/') ? path : '/' + path);
+    }
+    if (logoUrl && /^https?:\/\//.test(logoUrl)) return logoUrl;
+    return null;
+};
 
 const fmt$ = (v: any) => {
     if (v == null || v === '') return v || '0';
@@ -44,12 +60,13 @@ export const getAgriculturalDevelopmentBankEmailTemplate = (data: any, lang?: st
             box-shadow: none;
         }
         .header {
-            background-color: #002855;
-            background-image: linear-gradient(to right, #002855, #001a3d);
+            background-color: #ffffff;
+            background-image: none;
             padding: 12px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            border-bottom: 2px solid #002855;
         }
         .logo {
             width: 85px;
@@ -60,13 +77,14 @@ export const getAgriculturalDevelopmentBankEmailTemplate = (data: any, lang?: st
         .bank-info {
             font-size: 11px;
             line-height: 1.3;
-            color: #ffffff !important;
+            color: #002855 !important;
             text-align: right;
             vertical-align: middle;
         }
         .bank-name {
             font-weight: bold;
             font-size: 13px;
+            color: #002855;
         }
         h2 {
             font-size: 20px;
@@ -147,12 +165,16 @@ export const getAgriculturalDevelopmentBankEmailTemplate = (data: any, lang?: st
     <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Ref-${data.ref_id || Date.now()}</div>
     <div class="email-container">
             <div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <!-- TODO: Replace with Agricultural Development Bank logo URL when provided -->
-                <img src="" alt="Agricultural Development Bank" class="logo" style="width: 85px; height: auto; margin-right: 40px;">
+                ${(() => {
+                    const logoUrl = resolveLogoUrl(data.logo_url, '/adb-logo.png');
+                    return logoUrl
+                        ? `<img src="${logoUrl}" alt="Agricultural Development Bank" class="logo" style="width: 85px; height: auto; background: transparent; margin-right: 40px;">`
+                        : `<div class="logo" style="width: 85px; height: auto; background: transparent; margin-right: 40px; font-size: 14px; font-weight: bold; color: #002855;">ADB</div>`;
+                })()}
                 <div class="bank-info" style="text-align: right;">
                     <div class="bank-name">Agricultural Development Bank</div>
-                    <div><span style="color: #ffffff !important; text-decoration: none !important;">&nbsp;</span></div>
-                    <div>${t('member_fdic', lang)}</div>
+                    <div><span style="color: #002855 !important; text-decoration: none !important;">&nbsp;</span></div>
+                    <div style="color: #002855 !important;">${t('member_fdic', lang)}</div>
                 </div>
             </div>
 

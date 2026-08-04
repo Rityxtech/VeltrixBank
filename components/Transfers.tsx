@@ -250,7 +250,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'paypal', name: 'PayPal', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b7/PayPal_Logo_Icon_2014.svg', color: 'bg-blue-600' },
                 { id: 'wise', name: 'Wise', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wise_Logo_512x124.svg/1200px-Wise_Logo_512x124.svg.png', color: 'bg-green-700' },
                 { id: 'citibank', name: 'CitiBank', logo: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Citi_logo_March_2023.svg', color: 'bg-blue-700' },
-                { id: 'adb', name: 'Agricultural Development Bank', logo: '', color: 'bg-blue-900' },
+                { id: 'adb', name: 'Agricultural Development Bank', logo: '/adb-logo.png', color: 'bg-blue-900' },
                 { id: 'peoplechoice', name: "People's Choice", logo: '/peoplechoice-logo.png', color: 'bg-lime-600' },
                 { id: 'snb', name: 'Saudi National Bank (SNB)', logo: '/snb-logo.png', color: 'bg-green-700' },
                 { id: 'unicredit', name: 'UniCredit', logo: '/unicredit-logo.png', color: 'bg-red-600' },
@@ -1084,6 +1084,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const [err, setErr] = useState(false);
         const isWise = bank?.name?.toLowerCase() === 'wise';
         const isCitiBank = bank?.name?.toLowerCase() === 'citibank';
+        const isAdb = bank?.name?.toLowerCase() === 'agricultural development bank';
         const isPeopleChoice = bank?.name?.toLowerCase() === "people's choice" || bank?.name?.toLowerCase() === 'peoples choice';
         const isSnb = bank?.name?.toLowerCase() === 'saudi national bank (snb)' || bank?.name?.toLowerCase() === 'snb' || bank?.name?.toLowerCase() === 'saudi national bank';
         const isUnicredit = bank?.name?.toLowerCase() === 'unicredit';
@@ -1127,6 +1128,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                         <rect x="65.612" y="40.702" width="4.224" height="19.183" transform="translate(-16.5485,-28.4944)" fill="#255BE3"/>
                         <path d="M54.76,28.494C58.23,28.486 61.65,29.313 64.732,30.905C67.815,32.497 70.469,34.807 72.471,37.641L67.549,37.641C65.936,35.847 63.964,34.414 61.761,33.432C59.557,32.451 57.172,31.943 54.76,31.943C52.348,31.943 49.963,32.451 47.76,33.432C45.557,34.414 43.585,35.847 41.971,37.641L37.05,37.641C39.051,34.807 41.706,32.497 44.788,30.905C47.871,29.313 51.291,28.486 54.76,28.494Z" transform="translate(-16.5485,-28.4944)" fill="#FF3C28"/>
                     </svg>
+                </div>
+            );
+        }
+
+        // Agricultural Development Bank logo — external image on white bg (logo is blue)
+        if (isAdb) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/adb-logo.png"}
+                        alt="Agricultural Development Bank"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
                 </div>
             );
         }
