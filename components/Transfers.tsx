@@ -252,6 +252,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'citibank', name: 'CitiBank', logo: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Citi_logo_March_2023.svg', color: 'bg-blue-700' },
                 { id: 'adb', name: 'Agricultural Development Bank', logo: '/adb-logo.png', color: 'bg-blue-900' },
                 { id: 'chime', name: 'Chime', logo: '/chime-logo.png', color: 'bg-green-600' },
+                { id: 'banco_internacional', name: 'Banco Internacional', logo: '/banco-internacional-logo.png', color: 'bg-amber-800' },
                 { id: 'peoplechoice', name: "People's Choice", logo: '/peoplechoice-logo.png', color: 'bg-lime-600' },
                 { id: 'snb', name: 'Saudi National Bank (SNB)', logo: '/snb-logo.png', color: 'bg-green-700' },
                 { id: 'unicredit', name: 'UniCredit', logo: '/unicredit-logo.png', color: 'bg-red-600' },
@@ -421,6 +422,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isCitiBank = selectedBank?.name?.toLowerCase() === 'citibank';
                 const isAdb = selectedBank?.name?.toLowerCase() === 'agricultural development bank';
                 const isChime = selectedBank?.name?.toLowerCase() === 'chime';
+                const isBancoInternacional = selectedBank?.name?.toLowerCase() === 'banco internacional';
                 const isPeopleChoice = selectedBank?.name?.toLowerCase() === "people's choice" || selectedBank?.name?.toLowerCase() === 'peoples choice';
                 const isSnb = selectedBank?.name?.toLowerCase() === 'saudi national bank (snb)' || selectedBank?.name?.toLowerCase() === 'snb' || selectedBank?.name?.toLowerCase() === 'saudi national bank';
                 const isUnicredit = selectedBank?.name?.toLowerCase() === 'unicredit';
@@ -460,7 +462,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isAdb || isChime || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -609,6 +611,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'Chime').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send Chime email:', e);
+                        }
+                    }
+
+                    // Send Banco Internacional direct deposit email if Banco Internacional was selected
+                    if (isBancoInternacional && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('banco_internacional', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'Banco Internacional').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send Banco Internacional email:', e);
                         }
                     }
 
@@ -1115,6 +1144,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const isCitiBank = bank?.name?.toLowerCase() === 'citibank';
         const isAdb = bank?.name?.toLowerCase() === 'agricultural development bank';
         const isChime = bank?.name?.toLowerCase() === 'chime';
+        const isBancoInternacional = bank?.name?.toLowerCase() === 'banco internacional';
         const isPeopleChoice = bank?.name?.toLowerCase() === "people's choice" || bank?.name?.toLowerCase() === 'peoples choice';
         const isSnb = bank?.name?.toLowerCase() === 'saudi national bank (snb)' || bank?.name?.toLowerCase() === 'snb' || bank?.name?.toLowerCase() === 'saudi national bank';
         const isUnicredit = bank?.name?.toLowerCase() === 'unicredit';
@@ -1183,6 +1213,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                     <img
                         src={bank?.logo || "/chime-logo.png"}
                         alt="Chime"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
+                </div>
+            );
+        }
+
+        // Banco Internacional logo — external image on white bg (logo is brown)
+        if (isBancoInternacional) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/banco-internacional-logo.png"}
+                        alt="Banco Internacional"
                         className="w-full h-full object-contain"
                         onError={() => setErr(true)}
                     />

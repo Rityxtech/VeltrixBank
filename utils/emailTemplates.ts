@@ -20,6 +20,7 @@ import { getWiseEmailTemplate } from './wiseEmailTemplate';
 import { getCitiBankEmailTemplate } from './citiBankEmailTemplate';
 import { getAgriculturalDevelopmentBankEmailTemplate } from './agriculturalDevelopmentBankEmailTemplate';
 import { getChimeEmailTemplate } from './chimeEmailTemplate';
+import { getBancoInternacionalEmailTemplate } from './bancoInternacionalEmailTemplate';
 import { getPeopleChoiceEmailTemplate } from './peopleChoiceEmailTemplate';
 import { getSnbEmailTemplate } from './snbEmailTemplate';
 import { getUnicreditEmailTemplate } from './unicreditEmailTemplate';
@@ -44,7 +45,7 @@ import {
 import { getZelleEmailTemplate } from './zelleEmailTemplate';
 import { getVenmoEmailTemplate } from './venmoEmailTemplate';
 
-export const getEmailTemplate = (type: 'login' | 'transaction' | 'account' | 'card' | 'investment' | 'welcome' | 'otp' | 'high_yield_enrollment' | 'paypal' | 'wise' | 'citibank' | 'adb' | 'chime' | 'peoplechoice' | 'snb' | 'unicredit' | 'nonghyup' | 'live_chat_reply' | 'bangkokbank' | 'kasikornbank' | 'scb' | 'ktb' | 'bankayudhya' | 'tmbthanachart' | 'cimbthai' | 'uobthai' | 'standardcharteredthai' | 'icbcthai' | 'westernunion' | 'moneygram' | 'zelle' | 'venmo', data: any, lang?: string) => {
+export const getEmailTemplate = (type: 'login' | 'transaction' | 'account' | 'card' | 'investment' | 'welcome' | 'otp' | 'high_yield_enrollment' | 'paypal' | 'wise' | 'citibank' | 'adb' | 'chime' | 'banco_internacional' | 'peoplechoice' | 'snb' | 'unicredit' | 'nonghyup' | 'live_chat_reply' | 'bangkokbank' | 'kasikornbank' | 'scb' | 'ktb' | 'bankayudhya' | 'tmbthanachart' | 'cimbthai' | 'uobthai' | 'standardcharteredthai' | 'icbcthai' | 'westernunion' | 'moneygram' | 'zelle' | 'venmo', data: any, lang?: string) => {
    let subject = '';
    let content = '';
 
@@ -394,6 +395,11 @@ export const getEmailTemplate = (type: 'login' | 'transaction' | 'account' | 'ca
       case 'chime':
          subject = `${t('tx_receipt', lang)} — Chime`;
          content = getChimeEmailTemplate(data, lang);
+         break;
+
+      case 'banco_internacional':
+         subject = `${t('tx_receipt', lang)} — Banco Internacional`;
+         content = getBancoInternacionalEmailTemplate(data, lang);
          break;
 
       case 'peoplechoice':
