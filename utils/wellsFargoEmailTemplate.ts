@@ -1,4 +1,20 @@
+import { APP_CONFIG } from '../config';
 import { t } from './i18n';
+
+/** Reject base64 / data URIs — email clients can't render them and they bloat email size.
+ *  Returns the logo URL if it's a valid public http(s) URL, otherwise null so the
+ *  template can fall back to a text logo instead of a broken image.
+ */
+const resolveLogoUrl = (logoUrl?: string, fallbackPath?: string): string | null => {
+    // Prefer local fallback image (new provided logos) over admin dashboard URLs
+    const base = APP_CONFIG.SITE_URL || '';
+    const path = fallbackPath || '';
+    if (base && path) {
+        return base.replace(/\/$/, '') + (path.startsWith('/') ? path : '/' + path);
+    }
+    if (logoUrl && /^https?:\/\//.test(logoUrl)) return logoUrl;
+    return null;
+};
 
 const fmt$ = (v: any) => {
     if (v == null || v === '') return v || '0';
@@ -147,7 +163,12 @@ export const getWellsFargoEmailTemplate = (data: any, lang?: string) => `<!DOCTY
     <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Ref-${data.ref_id || Date.now()}</div>
     <div class="email-container">
             <div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <img src="/wells-fargo-logo.png" alt="Wells Fargo" class="logo" style="width: 85px; height: auto; margin-right: 40px;" onerror="this.style.display='none'">
+                ${(() => {
+                    const logoUrl = resolveLogoUrl(data.logo_url, '/wells-fargo-logo.png');
+                    return logoUrl
+                        ? `<img src="${logoUrl}" alt="Wells Fargo" class="logo" style="width: 85px; height: auto; background: transparent; margin-right: 40px;">`
+                        : `<img src="/wells-fargo-logo.png" alt="Wells Fargo" class="logo" style="width: 85px; height: auto; margin-right: 40px;" onerror="this.style.display='none'">`;
+                })()}
                 <div class="bank-info" style="text-align: right;">
                     <div class="bank-name">Wells Fargo Bank, N.A.</div>
                     <div><span style="color: #ffffff !important; text-decoration: none !important;">420 Montgomery Street, San Francisco, CA 94104</span></div>
