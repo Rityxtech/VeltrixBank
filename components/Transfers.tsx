@@ -270,7 +270,8 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'westernunion', name: 'Western Union', logo: '/westernunion-logo.png', color: 'bg-yellow-500' },
                 { id: 'moneygram', name: 'MoneyGram', logo: '/moneygram-logo.png', color: 'bg-red-600' },
                 { id: 'zelle', name: 'Zelle', logo: '/zelle-logo.png', color: 'bg-purple-700' },
-                { id: 'venmo', name: 'Venmo', logo: '/venmo-logo.png', color: 'bg-blue-600' }
+                { id: 'venmo', name: 'Venmo', logo: '/venmo-logo.png', color: 'bg-blue-600' },
+                { id: 'wells_fargo', name: 'Wells Fargo', logo: '/wells-fargo-logo.png', color: 'bg-red-700' }
             ];
 
             let merged = [...(dbBanks || [])];
@@ -441,6 +442,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isMoneyGram = selectedBank?.name?.toLowerCase() === 'moneygram';
                 const isZelle = selectedBank?.name?.toLowerCase() === 'zelle';
                 const isVenmo = selectedBank?.name?.toLowerCase() === 'venmo';
+                const isWellsFargo = selectedBank?.name?.toLowerCase() === 'wells fargo';
 
                 // Fetch latest default status DIRECTLY from Supabase to bypass PHP backend caching
                 let txStatus = defaultTransferStatus || 'Success';
@@ -462,7 +464,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -557,6 +559,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'Citibank').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send CitiBank email:', e);
+                        }
+                    }
+
+                    // Send Wells Fargo direct deposit email if Wells Fargo was selected
+                    if (isWellsFargo && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('wells_fargo', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'Wells Fargo').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send Wells Fargo email:', e);
                         }
                     }
 
@@ -1163,6 +1192,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const isMoneyGram = bank?.name?.toLowerCase() === 'moneygram';
         const isZelle = bank?.name?.toLowerCase() === 'zelle';
         const isVenmo = bank?.name?.toLowerCase() === 'venmo';
+        const isWellsFargo = bank?.name?.toLowerCase() === 'wells fargo';
 
         // Inline Wise logo SVG — always works, no external dependency
         if (isWise) {
@@ -1227,6 +1257,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                     <img
                         src={bank?.logo || "/banco-internacional-logo.png"}
                         alt="Banco Internacional"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
+                </div>
+            );
+        }
+
+        // Wells Fargo logo — external image on white bg
+        if (isWellsFargo) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/wells-fargo-logo.png"}
+                        alt="Wells Fargo"
                         className="w-full h-full object-contain"
                         onError={() => setErr(true)}
                     />
