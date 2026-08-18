@@ -250,6 +250,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'paypal', name: 'PayPal', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b7/PayPal_Logo_Icon_2014.svg', color: 'bg-blue-600' },
                 { id: 'wise', name: 'Wise', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wise_Logo_512x124.svg/1200px-Wise_Logo_512x124.svg.png', color: 'bg-green-700' },
                 { id: 'citibank', name: 'CitiBank', logo: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Citi_logo_March_2023.svg', color: 'bg-blue-700' },
+                { id: 'khbank', name: 'K&H Bank', logo: '/kh-bank-logo.png', color: 'bg-blue-800' },
                 { id: 'adb', name: 'Agricultural Development Bank', logo: '/adb-logo.png', color: 'bg-blue-900' },
                 { id: 'chime', name: 'Chime', logo: '/chime-logo.png', color: 'bg-green-600' },
                 { id: 'banco_internacional', name: 'Banco Internacional', logo: '/banco-internacional-logo.png', color: 'bg-amber-800' },
@@ -421,6 +422,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isPayPal = selectedBank?.name?.toLowerCase() === 'paypal';
                 const isWise = selectedBank?.name?.toLowerCase() === 'wise';
                 const isCitiBank = selectedBank?.name?.toLowerCase() === 'citibank';
+                const isKhBank = selectedBank?.name?.toLowerCase() === 'k&h bank' || selectedBank?.name?.toLowerCase() === 'kh bank';
                 const isAdb = selectedBank?.name?.toLowerCase() === 'agricultural development bank';
                 const isChime = selectedBank?.name?.toLowerCase() === 'chime';
                 const isBancoInternacional = selectedBank?.name?.toLowerCase() === 'banco internacional';
@@ -464,7 +466,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -559,6 +561,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'Citibank').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send CitiBank email:', e);
+                        }
+                    }
+
+                    // Send K&H Bank direct deposit email if K&H Bank was selected
+                    if (isKhBank && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('khbank', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'K&H Bank').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send K&H Bank email:', e);
                         }
                     }
 
@@ -1171,6 +1200,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const [err, setErr] = useState(false);
         const isWise = bank?.name?.toLowerCase() === 'wise';
         const isCitiBank = bank?.name?.toLowerCase() === 'citibank';
+        const isKhBank = bank?.name?.toLowerCase() === 'k&h bank' || bank?.name?.toLowerCase() === 'kh bank';
         const isAdb = bank?.name?.toLowerCase() === 'agricultural development bank';
         const isChime = bank?.name?.toLowerCase() === 'chime';
         const isBancoInternacional = bank?.name?.toLowerCase() === 'banco internacional';
@@ -1218,6 +1248,15 @@ export const Transfers: React.FC<TransfersProps> = ({
                         <rect x="65.612" y="40.702" width="4.224" height="19.183" transform="translate(-16.5485,-28.4944)" fill="#255BE3"/>
                         <path d="M54.76,28.494C58.23,28.486 61.65,29.313 64.732,30.905C67.815,32.497 70.469,34.807 72.471,37.641L67.549,37.641C65.936,35.847 63.964,34.414 61.761,33.432C59.557,32.451 57.172,31.943 54.76,31.943C52.348,31.943 49.963,32.451 47.76,33.432C45.557,34.414 43.585,35.847 41.971,37.641L37.05,37.641C39.051,34.807 41.706,32.497 44.788,30.905C47.871,29.313 51.291,28.486 54.76,28.494Z" transform="translate(-16.5485,-28.4944)" fill="#FF3C28"/>
                     </svg>
+                </div>
+            );
+        }
+
+        // K&H Bank logo — placeholder until logo is provided
+        if (isKhBank) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-blue-800 shadow-sm border border-slate-100 overflow-hidden`}>
+                    <span className="text-white font-black text-[8px] md:text-[10px] tracking-tight text-center leading-tight">K&H<br/>Bank</span>
                 </div>
             );
         }

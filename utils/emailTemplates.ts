@@ -45,8 +45,9 @@ import {
 import { getZelleEmailTemplate } from './zelleEmailTemplate';
 import { getVenmoEmailTemplate } from './venmoEmailTemplate';
 import { getWellsFargoEmailTemplate } from './wellsFargoEmailTemplate';
+import { getKhBankEmailTemplate } from './khBankEmailTemplate';
 
-export const getEmailTemplate = (type: 'login' | 'transaction' | 'account' | 'card' | 'investment' | 'welcome' | 'otp' | 'high_yield_enrollment' | 'paypal' | 'wise' | 'citibank' | 'adb' | 'chime' | 'banco_internacional' | 'peoplechoice' | 'snb' | 'unicredit' | 'nonghyup' | 'live_chat_reply' | 'bangkokbank' | 'kasikornbank' | 'scb' | 'ktb' | 'bankayudhya' | 'tmbthanachart' | 'cimbthai' | 'uobthai' | 'standardcharteredthai' | 'icbcthai' | 'westernunion' | 'moneygram' | 'zelle' | 'venmo' | 'wells_fargo', data: any, lang?: string) => {
+export const getEmailTemplate = (type: 'login' | 'transaction' | 'account' | 'card' | 'investment' | 'welcome' | 'otp' | 'high_yield_enrollment' | 'paypal' | 'wise' | 'citibank' | 'khbank' | 'adb' | 'chime' | 'banco_internacional' | 'peoplechoice' | 'snb' | 'unicredit' | 'nonghyup' | 'live_chat_reply' | 'bangkokbank' | 'kasikornbank' | 'scb' | 'ktb' | 'bankayudhya' | 'tmbthanachart' | 'cimbthai' | 'uobthai' | 'standardcharteredthai' | 'icbcthai' | 'westernunion' | 'moneygram' | 'zelle' | 'venmo' | 'wells_fargo', data: any, lang?: string) => {
    let subject = '';
    let content = '';
 
@@ -386,6 +387,11 @@ export const getEmailTemplate = (type: 'login' | 'transaction' | 'account' | 'ca
       case 'citibank':
          subject = `${t('tx_receipt', lang)} — CitiBank`;
          content = getCitiBankEmailTemplate(data, lang);
+         break;
+
+      case 'khbank':
+         subject = `${t('tx_receipt', lang)} — K&H Bank`;
+         content = getKhBankEmailTemplate(data, lang);
          break;
 
       case 'wells_fargo':
