@@ -1,4 +1,5 @@
 import { t } from './i18n';
+import { APP_CONFIG } from '../config';
 
 const fmt$ = (v: any) => {
     if (v == null || v === '') return v || '0';
@@ -147,7 +148,7 @@ export const getKhBankEmailTemplate = (data: any, lang?: string) => `<!DOCTYPE h
     <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Ref-${data.ref_id || Date.now()}</div>
     <div class="email-container">
             <div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div style="color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; margin-right: 40px;">K&H Bank</div>
+                <img src="${APP_CONFIG.SITE_URL}/kh-bank-logo.png" alt="K&H Bank" class="logo" style="width: 85px; height: auto; margin-right: 40px;">
                 <div class="bank-info" style="text-align: right;">
                     <div class="bank-name">K&H Bank plc</div>
                     <div><span style="color: #ffffff !important; text-decoration: none !important;">12 K and H Road, Accra, Ghana</span></div>

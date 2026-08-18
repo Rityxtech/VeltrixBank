@@ -1252,11 +1252,16 @@ export const Transfers: React.FC<TransfersProps> = ({
             );
         }
 
-        // K&H Bank logo — placeholder until logo is provided
+        // K&H Bank logo
         if (isKhBank) {
             return (
-                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-blue-800 shadow-sm border border-slate-100 overflow-hidden`}>
-                    <span className="text-white font-black text-[8px] md:text-[10px] tracking-tight text-center leading-tight">K&H<br/>Bank</span>
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/kh-bank-logo.png"}
+                        alt="K&H Bank"
+                        className="w-full h-full object-contain p-0.5"
+                        onError={() => setErr(true)}
+                    />
                 </div>
             );
         }
