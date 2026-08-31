@@ -23,6 +23,7 @@ export function getBankNameFromSource(source: string): string {
         venmo: 'Venmo',
         wells_fargo: 'Wells Fargo',
         bancoestado: 'BancoEstado',
+        asb: 'ASB Bank',
     };
     return builtInNames[source] || 'Support Team';
 }
@@ -52,6 +53,7 @@ export function getParentTypeFromSource(source: string): string | null {
         venmo: 'venmo',
         wells_fargo: 'wells_fargo',
         bancoestado: 'bancoestado',
+        asb: 'asb',
     };
     return builtInTypes[source] || null;
 }
