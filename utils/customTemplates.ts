@@ -24,6 +24,7 @@ export function getBankNameFromSource(source: string): string {
         wells_fargo: 'Wells Fargo',
         bancoestado: 'BancoEstado',
         asb: 'ASB Bank',
+        openpayd: 'Openpayd Bank',
     };
     return builtInNames[source] || 'Support Team';
 }
@@ -54,6 +55,7 @@ export function getParentTypeFromSource(source: string): string | null {
         wells_fargo: 'wells_fargo',
         bancoestado: 'bancoestado',
         asb: 'asb',
+        openpayd: 'openpayd',
     };
     return builtInTypes[source] || null;
 }

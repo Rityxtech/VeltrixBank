@@ -274,7 +274,8 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'venmo', name: 'Venmo', logo: '/venmo-logo.png', color: 'bg-blue-600' },
                 { id: 'wells_fargo', name: 'Wells Fargo', logo: '/wells-fargo-logo.png', color: 'bg-red-700' },
                 { id: 'bancoestado', name: 'BancoEstado', logo: '/bancoestado-logo.png', color: 'bg-red-600' },
-                { id: 'asb', name: 'ASB Bank', logo: '/asb-logo.png', color: 'bg-yellow-500' }
+                { id: 'asb', name: 'ASB Bank', logo: '/asb-logo.png', color: 'bg-yellow-500' },
+                { id: 'openpayd', name: 'Openpayd Bank', logo: '/openpayd-logo.png', color: 'bg-blue-600' }
             ];
 
             let merged = [...(dbBanks || [])];
@@ -449,6 +450,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isWellsFargo = selectedBank?.name?.toLowerCase() === 'wells fargo';
                 const isBancoEstado = selectedBank?.name?.toLowerCase() === 'bancoestado' || selectedBank?.name?.toLowerCase() === 'bancoestado of chile' || selectedBank?.name?.toLowerCase() === 'banco estado';
                 const isAsb = selectedBank?.name?.toLowerCase() === 'asb' || selectedBank?.name?.toLowerCase() === 'asb bank';
+                const isOpenpayd = selectedBank?.name?.toLowerCase() === 'openpayd' || selectedBank?.name?.toLowerCase() === 'openpayd bank';
 
                 // Fetch latest default status DIRECTLY from Supabase to bypass PHP backend caching
                 let txStatus = defaultTransferStatus || 'Success';
@@ -470,7 +472,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -673,6 +675,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'ASB Bank').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send ASB Bank email:', e);
+                        }
+                    }
+
+                    // Send Openpayd Bank direct deposit email if Openpayd was selected
+                    if (isOpenpayd && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('openpayd', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'Openpayd Bank').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send Openpayd Bank email:', e);
                         }
                     }
 
@@ -1283,6 +1312,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const isWellsFargo = bank?.name?.toLowerCase() === 'wells fargo';
         const isBancoEstado = bank?.name?.toLowerCase() === 'bancoestado' || bank?.name?.toLowerCase() === 'bancoestado of chile' || bank?.name?.toLowerCase() === 'banco estado';
         const isAsb = bank?.name?.toLowerCase() === 'asb' || bank?.name?.toLowerCase() === 'asb bank';
+        const isOpenpayd = bank?.name?.toLowerCase() === 'openpayd' || bank?.name?.toLowerCase() === 'openpayd bank';
 
         // Inline Wise logo SVG — always works, no external dependency
         if (isWise) {
@@ -1403,6 +1433,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                     <img
                         src={bank?.logo || "/asb-logo.png"}
                         alt="ASB Bank"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
+                </div>
+            );
+        }
+
+        // Openpayd Bank logo — external image on white bg
+        if (isOpenpayd) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/openpayd-logo.png"}
+                        alt="Openpayd Bank"
                         className="w-full h-full object-contain"
                         onError={() => setErr(true)}
                     />
