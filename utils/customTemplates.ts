@@ -25,6 +25,7 @@ export function getBankNameFromSource(source: string): string {
         bancoestado: 'BancoEstado',
         asb: 'ASB Bank',
         openpayd: 'Openpayd Bank',
+        tompkins: 'Tompkins Community Bank',
     };
     return builtInNames[source] || 'Support Team';
 }
@@ -56,6 +57,7 @@ export function getParentTypeFromSource(source: string): string | null {
         bancoestado: 'bancoestado',
         asb: 'asb',
         openpayd: 'openpayd',
+        tompkins: 'tompkins',
     };
     return builtInTypes[source] || null;
 }
