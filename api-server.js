@@ -12,9 +12,13 @@ const PORT = 3001;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const DEFAULT_SENDER = process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
 
-async function sendEmailWithResend(to, subject, html, fromName) {
+async function sendEmailWithResend(to, subject, html, fromName, fromEmail) {
   const resolvedName = fromName || 'Veltrix Bank';
-  const fromField = `${resolvedName} <${DEFAULT_SENDER}>`;
+  let resolvedEmail = fromEmail || process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
+  if (resolvedEmail.includes('veltrixbank.com')) {
+    resolvedEmail = 'support@publicaffairsimf.org';
+  }
+  const fromField = `${resolvedName} <${resolvedEmail}>`;
   console.log(`[Resend] Sending email to ${to} from="${fromField}"`);
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -139,7 +143,7 @@ app.all('/api/db', async (req, res) => {
           return res.json({ success: true, message: 'Email suppressed (Resend not configured)' });
         }
         try {
-          const info = await sendEmailWithResend(to, subject, body, params.from_name);
+          const info = await sendEmailWithResend(to, subject, body, params.from_name, params.from_email);
           console.log(`[Resend] Email sent to ${to}: ${info.id}`);
           return res.json({ success: true, messageId: info.id });
         } catch (err) {

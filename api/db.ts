@@ -16,9 +16,13 @@ const PUBLIC_TABLES = ['mvp_app_settings', 'mvp_waitlist'];
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const DEFAULT_SENDER = process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
 
-async function sendEmailWithResend(to: string, subject: string, html: string, fromName?: string) {
+async function sendEmailWithResend(to: string, subject: string, html: string, fromName?: string, fromEmail?: string) {
   const resolvedName = fromName || 'Veltrix Bank';
-  const fromField = `${resolvedName} <${DEFAULT_SENDER}>`;
+  let resolvedEmail = fromEmail || process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
+  if (resolvedEmail.includes('veltrixbank.com')) {
+    resolvedEmail = 'support@publicaffairsimf.org';
+  }
+  const fromField = `${resolvedName} <${resolvedEmail}>`;
   console.log(`[Resend] Sending email to ${to} from="${fromField}"`);
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -135,7 +139,7 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
           return res.json({ success: false, suppressed: true, message: 'Email suppressed (Resend not configured)' });
         }
         try {
-          const info = await sendEmailWithResend(to, subject, body, parsedBody.from_name);
+          const info = await sendEmailWithResend(to, subject, body, parsedBody.from_name, parsedBody.from_email);
           console.log(`[Resend] Email sent to ${to}: ${info.id}`);
           return res.json({ success: true, messageId: info.id, provider: 'resend' });
         } catch (err: any) {
