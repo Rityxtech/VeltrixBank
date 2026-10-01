@@ -14,7 +14,7 @@ const PUBLIC_TABLES = ['mvp_app_settings', 'mvp_waitlist'];
 
 // ─── Resend Email Configuration ────────────────────────────
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const DEFAULT_SENDER = process.env.RESEND_SENDER || 'onboarding@resend.dev';
+const DEFAULT_SENDER = process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
 
 async function sendEmailWithResend(to: string, subject: string, html: string, fromName?: string) {
   const resolvedName = fromName || 'Veltrix Bank';

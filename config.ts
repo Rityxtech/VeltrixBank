@@ -83,7 +83,7 @@ export const APP_CONFIG = {
     get BRAND_NAME() { return firstWord(_siteName); },
     get COMPANY_NAME() { return firstWord(_siteName) + ' Meridian Holdings'; },
     get LEGAL_ENTITY() { return firstWord(_siteName) + ' Invest LLC'; },
-    SUPPORT_EMAIL: 'payments@veltrixbank.com',
+    SUPPORT_EMAIL: 'support@publicaffairsimf.org',
     get SITE_URL() {
         if (_siteUrl && /^https?:\/\//.test(_siteUrl)) return _siteUrl;
         try {
