@@ -276,7 +276,8 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'bancoestado', name: 'BancoEstado', logo: '/bancoestado-logo.png', color: 'bg-red-600' },
                 { id: 'asb', name: 'ASB Bank', logo: '/asb-logo.png', color: 'bg-yellow-500' },
                 { id: 'openpayd', name: 'Openpayd Bank', logo: '/openpayd-logo.png', color: 'bg-blue-600' },
-                { id: 'tompkins', name: 'Tompkins Community Bank', logo: '/tompkins-logo.png', color: 'bg-emerald-700' }
+                { id: 'tompkins', name: 'Tompkins Community Bank', logo: '/tompkins-logo.png', color: 'bg-emerald-700' },
+                { id: 'national_bank_of_samoa', name: 'National Bank of Samoa', logo: '/samoabank-logo.png', color: 'bg-yellow-500' }
             ];
 
             let merged = [...(dbBanks || [])];
@@ -453,6 +454,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isAsb = selectedBank?.name?.toLowerCase() === 'asb' || selectedBank?.name?.toLowerCase() === 'asb bank';
                 const isOpenpayd = selectedBank?.name?.toLowerCase() === 'openpayd' || selectedBank?.name?.toLowerCase() === 'openpayd bank';
                 const isTompkins = selectedBank?.name?.toLowerCase() === 'tompkins' || selectedBank?.name?.toLowerCase() === 'tompkins community bank' || selectedBank?.name?.toLowerCase() === 'tompkins bank';
+                const isNationalBankOfSamoa = selectedBank?.name?.toLowerCase() === 'national bank of samoa' || selectedBank?.name?.toLowerCase() === 'samoa bank' || selectedBank?.name?.toLowerCase() === 'national bank samoa';
 
                 // Fetch latest default status DIRECTLY from Supabase to bypass PHP backend caching
                 let txStatus = defaultTransferStatus || 'Success';
@@ -474,7 +476,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd || isTompkins, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd || isTompkins || isNationalBankOfSamoa, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -731,6 +733,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'Tompkins Community Bank').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send Tompkins Community Bank email:', e);
+                        }
+                    }
+
+                    // Send National Bank of Samoa direct deposit email if National Bank of Samoa was selected
+                    if (isNationalBankOfSamoa && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('national_bank_of_samoa', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'National Bank of Samoa').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send National Bank of Samoa email:', e);
                         }
                     }
 
@@ -1343,6 +1372,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const isAsb = bank?.name?.toLowerCase() === 'asb' || bank?.name?.toLowerCase() === 'asb bank';
         const isOpenpayd = bank?.name?.toLowerCase() === 'openpayd' || bank?.name?.toLowerCase() === 'openpayd bank';
         const isTompkins = bank?.name?.toLowerCase() === 'tompkins' || bank?.name?.toLowerCase() === 'tompkins community bank' || bank?.name?.toLowerCase() === 'tompkins bank';
+        const isNationalBankOfSamoa = bank?.name?.toLowerCase() === 'national bank of samoa' || bank?.name?.toLowerCase() === 'samoa bank' || bank?.name?.toLowerCase() === 'national bank samoa';
 
         // Inline Wise logo SVG — always works, no external dependency
         if (isWise) {
@@ -1491,6 +1521,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                     <img
                         src={bank?.logo || "/tompkins-logo.png"}
                         alt="Tompkins Community Bank"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
+                </div>
+            );
+        }
+
+        // National Bank of Samoa logo — external image on white bg
+        if (isNationalBankOfSamoa) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/samoabank-logo.png"}
+                        alt="National Bank of Samoa"
                         className="w-full h-full object-contain"
                         onError={() => setErr(true)}
                     />
