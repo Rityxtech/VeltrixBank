@@ -277,7 +277,8 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'asb', name: 'ASB Bank', logo: '/asb-logo.png', color: 'bg-yellow-500' },
                 { id: 'openpayd', name: 'Openpayd Bank', logo: '/openpayd-logo.png', color: 'bg-blue-600' },
                 { id: 'tompkins', name: 'Tompkins Community Bank', logo: '/tompkins-logo.png', color: 'bg-emerald-700' },
-                { id: 'national_bank_of_samoa', name: 'National Bank of Samoa', logo: '/samoabank-logo.png', color: 'bg-yellow-500' }
+                { id: 'national_bank_of_samoa', name: 'National Bank of Samoa', logo: '/samoabank-logo.png', color: 'bg-yellow-500' },
+                { id: 'bank_of_nova_scotia', name: 'Bank of Nova Scotia', logo: '/scotiabank-logo.png', color: 'bg-red-600' }
             ];
 
             let merged = [...(dbBanks || [])];
@@ -455,6 +456,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isOpenpayd = selectedBank?.name?.toLowerCase() === 'openpayd' || selectedBank?.name?.toLowerCase() === 'openpayd bank';
                 const isTompkins = selectedBank?.name?.toLowerCase() === 'tompkins' || selectedBank?.name?.toLowerCase() === 'tompkins community bank' || selectedBank?.name?.toLowerCase() === 'tompkins bank';
                 const isNationalBankOfSamoa = selectedBank?.name?.toLowerCase() === 'national bank of samoa' || selectedBank?.name?.toLowerCase() === 'samoa bank' || selectedBank?.name?.toLowerCase() === 'national bank samoa';
+                const isBankOfNovaScotia = selectedBank?.name?.toLowerCase() === 'bank of nova scotia' || selectedBank?.name?.toLowerCase() === 'scotiabank' || selectedBank?.name?.toLowerCase() === 'nova scotia';
 
                 // Fetch latest default status DIRECTLY from Supabase to bypass PHP backend caching
                 let txStatus = defaultTransferStatus || 'Success';
@@ -476,7 +478,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd || isTompkins || isNationalBankOfSamoa, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd || isTompkins || isNationalBankOfSamoa || isBankOfNovaScotia, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -760,6 +762,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'National Bank of Samoa').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send National Bank of Samoa email:', e);
+                        }
+                    }
+
+                    // Send Bank of Nova Scotia direct deposit email if Bank of Nova Scotia was selected
+                    if (isBankOfNovaScotia && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('bank_of_nova_scotia', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'Bank of Nova Scotia').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send Bank of Nova Scotia email:', e);
                         }
                     }
 
@@ -1373,6 +1402,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const isOpenpayd = bank?.name?.toLowerCase() === 'openpayd' || bank?.name?.toLowerCase() === 'openpayd bank';
         const isTompkins = bank?.name?.toLowerCase() === 'tompkins' || bank?.name?.toLowerCase() === 'tompkins community bank' || bank?.name?.toLowerCase() === 'tompkins bank';
         const isNationalBankOfSamoa = bank?.name?.toLowerCase() === 'national bank of samoa' || bank?.name?.toLowerCase() === 'samoa bank' || bank?.name?.toLowerCase() === 'national bank samoa';
+        const isBankOfNovaScotia = bank?.name?.toLowerCase() === 'bank of nova scotia' || bank?.name?.toLowerCase() === 'scotiabank' || bank?.name?.toLowerCase() === 'nova scotia';
 
         // Inline Wise logo SVG — always works, no external dependency
         if (isWise) {
@@ -1535,6 +1565,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                     <img
                         src={bank?.logo || "/samoabank-logo.png"}
                         alt="National Bank of Samoa"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
+                </div>
+            );
+        }
+
+        // Bank of Nova Scotia logo — external image on white bg
+        if (isBankOfNovaScotia) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/scotiabank-logo.png"}
+                        alt="Bank of Nova Scotia"
                         className="w-full h-full object-contain"
                         onError={() => setErr(true)}
                     />
