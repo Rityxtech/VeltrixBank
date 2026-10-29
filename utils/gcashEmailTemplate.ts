@@ -60,9 +60,8 @@ export const getGCashEmailTemplate = (data: any, lang?: string) => `<!DOCTYPE ht
             box-shadow: none;
         }
         .header {
-            background-color: #007DFE;
-            background-image: linear-gradient(135deg, #007DFE 0%, #0056B3 100%);
-            border-bottom: 3px solid #0056B3;
+            background-color: #ffffff;
+            border-bottom: 3px solid #007DFE;
             padding: 16px 20px;
             display: flex;
             align-items: center;
@@ -77,14 +76,14 @@ export const getGCashEmailTemplate = (data: any, lang?: string) => `<!DOCTYPE ht
         .bank-info {
             font-size: 11px;
             line-height: 1.3;
-            color: #ffffff !important;
+            color: #007DFE !important;
             text-align: right;
             vertical-align: middle;
         }
         .bank-name {
             font-weight: bold;
             font-size: 14px;
-            color: #ffffff !important;
+            color: #007DFE !important;
         }
         h2 {
             font-size: 20px;
@@ -174,8 +173,8 @@ export const getGCashEmailTemplate = (data: any, lang?: string) => `<!DOCTYPE ht
                 })()}
                 <div class="bank-info" style="text-align: right;">
                     <div class="bank-name">GCash</div>
-                    <div><span style="color: #ffffff !important; text-decoration: none !important;">G-Xchange, Inc., Taguig, Philippines</span></div>
-                    <div>${t('member_fdic', lang)}</div>
+                    <div><span style="color: #007DFE !important; text-decoration: none !important;">G-Xchange, Inc., Taguig, Philippines</span></div>
+                    <div style="color: #007DFE !important;">${t('member_fdic', lang)}</div>
                 </div>
             </div>
 
