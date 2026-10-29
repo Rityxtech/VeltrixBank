@@ -29,6 +29,7 @@ export function getBankNameFromSource(source: string): string {
         national_bank_of_samoa: 'National Bank of Samoa',
         bank_of_nova_scotia: 'Bank of Nova Scotia',
         bank_of_marshall_islands: 'Bank of Marshall Islands',
+        gcash: 'GCash',
     };
     return builtInNames[source] || 'Support Team';
 }
@@ -64,6 +65,7 @@ export function getParentTypeFromSource(source: string): string | null {
         national_bank_of_samoa: 'national_bank_of_samoa',
         bank_of_nova_scotia: 'bank_of_nova_scotia',
         bank_of_marshall_islands: 'bank_of_marshall_islands',
+        gcash: 'gcash',
     };
     return builtInTypes[source] || null;
 }
