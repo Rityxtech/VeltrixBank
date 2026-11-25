@@ -255,7 +255,6 @@ export const Transfers: React.FC<TransfersProps> = ({
 
             const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
             const recipientName = formData.recipientName || 'Recipient';
-            const recipientAccount = formData.accountNumber || 'N/A';
             const activeBankName = selectedBank?.name || 'Bank';
             const bankLower = activeBankName.toLowerCase();
             const feeRate = bankLower === 'paypal' ? 0.045 : bankLower === 'wise' ? 0.02 : 0.025;
@@ -264,26 +263,14 @@ export const Transfers: React.FC<TransfersProps> = ({
             const currencyCode = selectedCurrency.code;
             const symbol = selectedCurrency.symbol;
             const fmtAmt = (val: number) => `${symbol}${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
-            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             const displayStatus = statusStr === 'Success' ? 'Successful' : statusStr;
             const claimUrl = 'https://code.jivosite.com/chatpage/YG4WdNtpis';
 
             const smsBody = [
-                `[${activeBankName} Alert]`,
-                `Incoming Direct Deposit Notification`,
-                ``,
-                `Sender Name: ${senderName}`,
-                `Recipient Name: ${recipientName}`,
-                `Recipient Account: ${recipientAccount}`,
-                `Transaction ID: ${txRef.replace('#', '')}`,
-                `Date: ${dateStr}`,
-                `Amount: ${fmtAmt(rawAmount)}`,
-                `Fee: ${fmtAmt(fee)}`,
-                `Total: ${fmtAmt(total)}`,
-                `Status: ${displayStatus}`,
-                ``,
-                `Action Required: Please confirm the receipt of this deposit to complete the transaction record.`,
-                `Confirm Payment: ${claimUrl}`
+                `[${activeBankName} Alert] ${fmtAmt(rawAmount)} (Net: ${fmtAmt(total)})`,
+                `From: ${senderName} | To: ${recipientName}`,
+                `Ref: ${txRef.replace('#', '')} | Status: ${displayStatus}`,
+                `Action Required - Confirm Payment: ${claimUrl}`
             ].join('\n');
 
             console.log(`[Transfer SMS] Dispatching to ${phoneToSend} with bank "${activeBankName}" (${displayStatus})`);
