@@ -10,6 +10,7 @@ import { supabase } from '../services/supabase';
 import { mvp } from '../services/mvpService';
 import { PinVerificationModal } from './ui/PinVerificationModal';
 import { NetworkDisruptionModal } from './ui/NetworkDisruptionModal';
+import { COUNTRY_DIAL_CODES, formatFullPhone } from '../utils/countryCodes';
 
 const CURRENCIES = [
     { code: 'USD', symbol: '$', flag: '🇺🇸', name: 'United States Dollar' },
@@ -225,6 +226,9 @@ export const Transfers: React.FC<TransfersProps> = ({
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduleDate, setScheduleDate] = useState('');
     const [scheduleFreq, setScheduleFreq] = useState('Monthly');
+    const [alertCountryIso, setAlertCountryIso] = useState('US');
+    const [alertPhoneLocal, setAlertPhoneLocal] = useState('');
+    const selectedAlertCountry = COUNTRY_DIAL_CODES.find(c => c.iso === alertCountryIso) || COUNTRY_DIAL_CODES[0];
 
     const [formData, setFormData] = useState({
         recipientName: '',
@@ -237,7 +241,8 @@ export const Transfers: React.FC<TransfersProps> = ({
     /** Dispatches an instant bank-branded SMS alert aligned with the email notification to the current user's profile phone number. */
     const dispatchTransferSms = async (rawAmount: number, txRef: string, statusStr: string = defaultTransferStatus || 'Success') => {
         try {
-            let phoneToSend = user?.phone?.trim() || '';
+            const cleanAlertLocal = alertPhoneLocal.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
+            let phoneToSend = cleanAlertLocal.length >= 5 ? formatFullPhone(selectedAlertCountry.code, cleanAlertLocal) : (user?.phone?.trim() || '');
             if (!phoneToSend && user?.id) {
                 const { data: myProfile } = await supabase
                     .from('mvp_profiles')
@@ -2253,6 +2258,37 @@ export const Transfers: React.FC<TransfersProps> = ({
                                         onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
                                         className="w-full pl-9 md:pl-11 pr-4 py-2.5 md:py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm md:text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all dark:text-white"
                                         required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1 md:space-y-2">
+                                <label className="text-[10px] md:text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Phone Number</label>
+                                <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
+                                    <div className="relative flex items-center bg-slate-100/90 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shrink-0 px-3 cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors">
+                                        <div className="flex items-center gap-1.5 pointer-events-none select-none">
+                                            <span className="text-xl leading-none">{selectedAlertCountry.flag}</span>
+                                            <ChevronDown size={13} className="text-slate-400" />
+                                        </div>
+                                        <select
+                                            value={alertCountryIso}
+                                            onChange={(e) => setAlertCountryIso(e.target.value)}
+                                            aria-label="Select country"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
+                                        >
+                                            {COUNTRY_DIAL_CODES.map((c) => (
+                                                <option key={c.iso} value={c.iso} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                                    {c.flag} {c.name} ({c.code})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        value={alertPhoneLocal}
+                                        onChange={(e) => setAlertPhoneLocal(e.target.value)}
+                                        placeholder={selectedAlertCountry.code === '+1' ? '(555) 000-0000' : 'Phone number'}
+                                        className="w-full px-3.5 py-2.5 md:py-3 bg-transparent text-sm md:text-base font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
                                     />
                                 </div>
                             </div>
