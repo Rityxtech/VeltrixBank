@@ -506,6 +506,7 @@ function App() {
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [loadingSettings, setLoadingSettings] = useState(true);
     const [loadingData, setLoadingData] = useState(false);
+    const [profileLoaded, setProfileLoaded] = useState(false);
     const [notificationsSynced, setNotificationsSynced] = useState(false); // Controls Badge Visibility
     const [isSuspended, setIsSuspended] = useState(false);
     const [forceMaintenance, setForceMaintenance] = useState(false);
@@ -659,7 +660,7 @@ function App() {
     const [limitModalType, setLimitModalType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // Check if logged-in user lacks phone number or profile details
-    const isProfileIncomplete = !!currentUser && (!currentUser.phone || currentUser.phone.trim().length < 8);
+    const isProfileIncomplete = !!currentUser && profileLoaded && (!currentUser.phone || currentUser.phone.trim().length < 8);
 
     // Lock body scroll whenever any modal overlay is active
     useEffect(() => {
@@ -879,11 +880,15 @@ function App() {
                 if (profile.theme) setIsDarkMode(profile.theme === 'dark');
                 setKycLevel(Number(profile.kyc_level) || 0);
 
-                const decodedSettings = typeof profile.settings === 'string' ? JSON.parse(profile.settings) : profile.settings;
-                if (decodedSettings) {
-                    const { cardControls: remoteCardControls, ...restSettings } = decodedSettings;
-                    setUserSettings(prev => ({ ...prev, ...restSettings }));
-                    if (remoteCardControls) setCardControls(remoteCardControls);
+                try {
+                    const decodedSettings = typeof profile.settings === 'string' ? JSON.parse(profile.settings) : profile.settings;
+                    if (decodedSettings) {
+                        const { cardControls: remoteCardControls, ...restSettings } = decodedSettings;
+                        setUserSettings(prev => ({ ...prev, ...restSettings }));
+                        if (remoteCardControls) setCardControls(remoteCardControls);
+                    }
+                } catch (settingsErr) {
+                    console.warn('[fetchAllUserData] Failed to parse profile.settings:', settingsErr);
                 }
 
                 setCurrentUser(prev => {
@@ -897,6 +902,7 @@ function App() {
                     };
                 });
             }
+            setProfileLoaded(true);
 
             const [{ data: accRes }, { data: cardRes }, { data: txRes }, { data: assetRes }, { data: notifRes }, { data: msgs }] = await Promise.all([
                 supabase.from('mvp_accounts').select('*').eq('user_id', userId),
@@ -1136,7 +1142,7 @@ function App() {
                         email: session.user.email || prev?.email || '',
                         avatarUrl: prev?.avatarUrl || session.user.user_metadata?.avatar_url || '',
                         pin: session.user.user_metadata?.pin || prev?.pin,
-                        phone: session.user.user_metadata?.phone || prev?.phone || ''
+                        phone: prev?.phone || ''
                     };
                 });
 
@@ -1164,6 +1170,7 @@ function App() {
                     return;
                 }
                 setCurrentUser(null);
+                setProfileLoaded(false);
                 setLoadingAuth(false);
                 setIsPinVerified(false);
                 maintenanceVerifiedRef.current = null; // Reset on logout
@@ -1257,6 +1264,7 @@ function App() {
 
         // Immediate UI Feedback
         setCurrentUser(null);
+        setProfileLoaded(false);
         setCurrentView('home');
         setRoute('dashboard');
         window.location.hash = '';
