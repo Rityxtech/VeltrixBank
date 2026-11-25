@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Phone, ShieldCheck, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { User, Phone, ShieldCheck, Lock, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { COUNTRY_DIAL_CODES, parseStoredPhone, formatFullPhone } from '../../utils/countryCodes';
 
 interface CompleteProfileModalProps {
     isOpen: boolean;
@@ -18,14 +19,22 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
     user,
     onSuccess
 }) => {
+    const initialParsed = parseStoredPhone(user.phone);
     const [fullName, setFullName] = useState(user.name || '');
-    const [phone, setPhone] = useState(user.phone || '');
+    const [countryCode, setCountryCode] = useState(initialParsed.countryCode);
+    const [localPhone, setLocalPhone] = useState(initialParsed.localNumber);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
     React.useEffect(() => {
         if (user.name && !fullName) setFullName(user.name);
-        if (user.phone && !phone) setPhone(user.phone);
+        if (user.phone) {
+            const parsed = parseStoredPhone(user.phone);
+            if (!localPhone) {
+                setCountryCode(parsed.countryCode);
+                setLocalPhone(parsed.localNumber);
+            }
+        }
     }, [user.name, user.phone]);
 
     if (!isOpen) return null;
@@ -35,23 +44,19 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
         setError('');
 
         const trimmedName = fullName.trim();
-        const cleanPhone = phone.trim().replace(/[\s\-\(\)]/g, '');
+        const cleanLocal = localPhone.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
 
         if (!trimmedName || trimmedName.length < 2) {
             setError('Please enter your legal full name.');
             return;
         }
 
-        if (!cleanPhone || cleanPhone.length < 8) {
-            setError('Please enter a valid mobile phone number including your country code (e.g. +1, +44, +234).');
+        if (!cleanLocal || cleanLocal.length < 5) {
+            setError('Please enter a valid mobile phone number.');
             return;
         }
 
-        // Format phone to ensure leading '+'
-        let formattedPhone = cleanPhone;
-        if (!formattedPhone.startsWith('+')) {
-            formattedPhone = '+' + formattedPhone;
-        }
+        const formattedPhone = formatFullPhone(countryCode, cleanLocal);
 
         setIsLoading(true);
 
@@ -157,26 +162,40 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Mobile Phone */}
+                    {/* Mobile Phone with Integrated Country Selector */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 flex items-center justify-between">
                             <span>Mobile Phone Number</span>
                             <span className="text-red-500 font-semibold text-[10px]">Required</span>
                         </label>
-                        <div className="relative">
-                            <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
+                            {/* Country Selector Dropdown */}
+                            <div className="relative flex items-center bg-slate-100/90 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shrink-0">
+                                <select
+                                    value={countryCode}
+                                    onChange={(e) => setCountryCode(e.target.value)}
+                                    aria-label="Select country code"
+                                    className="appearance-none bg-transparent pl-3 pr-7 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none"
+                                >
+                                    {COUNTRY_DIAL_CODES.map((c) => (
+                                        <option key={c.iso} value={c.code} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                            {c.flag} {c.code} ({c.name})
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={14} className="absolute right-2 text-slate-400 pointer-events-none" />
+                            </div>
+
+                            {/* Local Phone Input */}
                             <input
                                 type="tel"
                                 required
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="+1 (555) 000-0000"
-                                className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                value={localPhone}
+                                onChange={(e) => setLocalPhone(e.target.value)}
+                                placeholder="801 234 5678"
+                                className="w-full px-3.5 py-2.5 sm:py-3 bg-transparent text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
                             />
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 pl-1">
-                            Include your country code (e.g. <span className="font-semibold text-slate-700 dark:text-slate-300">+1</span> for US, <span className="font-semibold text-slate-700 dark:text-slate-300">+44</span> for UK, <span className="font-semibold text-slate-700 dark:text-slate-300">+234</span> for Nigeria).
-                        </p>
                     </div>
 
                     {/* Submit Button */}

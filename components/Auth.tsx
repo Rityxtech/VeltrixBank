@@ -4,6 +4,7 @@ import { Mail, Lock, Loader2, CheckCircle, AlertCircle, ArrowLeft, User, Phone, 
 import { supabase } from '../services/supabase';
 import { mvp } from '../services/mvpService';
 import { getEmailTemplate } from '../utils/emailTemplates';
+import { COUNTRY_DIAL_CODES } from '../utils/countryCodes';
 import { APP_CONFIG } from '../config';
 
 interface AuthProps {
@@ -72,6 +73,8 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [signupCountryCode, setSignupCountryCode] = useState('+1');
+  const [signupLocalPhone, setSignupLocalPhone] = useState('');
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -326,10 +329,12 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
 
     if (formData.pin.length !== 4) return setError("PIN must be 4 digits.");
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) return setError("Missing required fields.");
-    const cleanPhone = formData.phone?.trim().replace(/[\s\-\(\)]/g, '') || '';
-    if (!cleanPhone || cleanPhone.length < 8) {
-      return setError("A valid mobile phone number with country code is required.");
+    const cleanLocal = signupLocalPhone.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
+    if (!cleanLocal || cleanLocal.length < 5) {
+      return setError("A valid mobile phone number is required.");
     }
+    const fullPhone = `${signupCountryCode}${cleanLocal}`;
+    formData.phone = fullPhone;
 
     setIsLoading(true);
     setError('');
@@ -653,19 +658,42 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                     </div>
                     <input name="username" placeholder="Username" value={formData.username} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required />
                     <div className="space-y-1">
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70" size={14} />
+                      <div className="flex rounded-xl border border-white/20 bg-black/20 focus-within:border-blue-300 focus-within:bg-black/30 transition-all overflow-hidden backdrop-blur-[2px] shadow-sm">
+                        <div className="relative flex items-center bg-white/5 border-r border-white/20 shrink-0">
+                          <select
+                            value={signupCountryCode}
+                            onChange={(e) => {
+                              const newCode = e.target.value;
+                              setSignupCountryCode(newCode);
+                              const cleanLocal = signupLocalPhone.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
+                              setFormData(prev => ({ ...prev, phone: cleanLocal ? `${newCode}${cleanLocal}` : '' }));
+                            }}
+                            className="appearance-none bg-transparent pl-2.5 pr-6 py-2.5 text-xs font-semibold text-white cursor-pointer focus:outline-none"
+                            aria-label="Select country code"
+                          >
+                            {COUNTRY_DIAL_CODES.map((c) => (
+                              <option key={c.iso} value={c.code} className="bg-slate-900 text-white">
+                                {c.flag} {c.code} ({c.name})
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown size={12} className="absolute right-1.5 text-white/70 pointer-events-none" />
+                        </div>
                         <input
                           name="phone"
                           type="tel"
-                          placeholder="Phone (e.g. +1 555 123 4567)"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className={`${inputClass} !pl-9`}
+                          placeholder="Phone Number (e.g. 704 061 3947)"
+                          value={signupLocalPhone}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSignupLocalPhone(val);
+                            const cleanLocal = val.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
+                            setFormData(prev => ({ ...prev, phone: cleanLocal ? `${signupCountryCode}${cleanLocal}` : '' }));
+                          }}
+                          className="w-full px-3 py-2.5 bg-transparent text-xs font-medium text-white placeholder:text-white/60 outline-none"
                           required
                         />
                       </div>
-                      <p className="text-[9px] text-white/70 pl-1 font-medium">Required: Include country code (e.g. +1, +44, +234)</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2"><input name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} /><input name="country" placeholder="Country" value={formData.country} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} /></div>
                     <button type="submit" disabled={isLoading} className="w-full py-2.5 bg-emerald-600/80 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] mt-2 flex items-center justify-center gap-2 backdrop-blur-sm border border-emerald-500/30">{isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Complete Registration'}</button>
