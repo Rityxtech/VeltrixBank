@@ -73,8 +73,9 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [signupCountryCode, setSignupCountryCode] = useState('+1');
+  const [signupIso, setSignupIso] = useState('US');
   const [signupLocalPhone, setSignupLocalPhone] = useState('');
+  const selectedSignupCountry = COUNTRY_DIAL_CODES.find(c => c.iso === signupIso) || COUNTRY_DIAL_CODES[0];
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -333,7 +334,7 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
     if (!cleanLocal || cleanLocal.length < 5) {
       return setError("A valid mobile phone number is required.");
     }
-    const fullPhone = `${signupCountryCode}${cleanLocal}`;
+    const fullPhone = `${selectedSignupCountry.code}${cleanLocal}`;
     formData.phone = fullPhone;
 
     setIsLoading(true);
@@ -659,25 +660,29 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                     <input name="username" placeholder="Username" value={formData.username} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required />
                     <div className="space-y-1">
                       <div className="flex rounded-xl border border-white/20 bg-black/20 focus-within:border-blue-300 focus-within:bg-black/30 transition-all overflow-hidden backdrop-blur-[2px] shadow-sm">
-                        <div className="relative flex items-center bg-white/5 border-r border-white/20 shrink-0">
+                        <div className="relative flex items-center bg-white/5 border-r border-white/20 shrink-0 px-2.5 py-2.5 cursor-pointer hover:bg-white/10 transition-colors">
+                          <div className="flex items-center gap-1 pointer-events-none select-none">
+                            <span className="text-base leading-none">{selectedSignupCountry.flag}</span>
+                            <ChevronDown size={11} className="text-white/70" />
+                          </div>
                           <select
-                            value={signupCountryCode}
+                            value={signupIso}
                             onChange={(e) => {
-                              const newCode = e.target.value;
-                              setSignupCountryCode(newCode);
+                              const newIso = e.target.value;
+                              setSignupIso(newIso);
+                              const matched = COUNTRY_DIAL_CODES.find(c => c.iso === newIso) || COUNTRY_DIAL_CODES[0];
                               const cleanLocal = signupLocalPhone.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
-                              setFormData(prev => ({ ...prev, phone: cleanLocal ? `${newCode}${cleanLocal}` : '' }));
+                              setFormData(prev => ({ ...prev, phone: cleanLocal ? `${matched.code}${cleanLocal}` : '' }));
                             }}
-                            className="appearance-none bg-transparent pl-2.5 pr-6 py-2.5 text-xs font-semibold text-white cursor-pointer focus:outline-none"
-                            aria-label="Select country code"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-xs"
+                            aria-label="Select country"
                           >
                             {COUNTRY_DIAL_CODES.map((c) => (
-                              <option key={c.iso} value={c.code} className="bg-slate-900 text-white">
-                                {c.flag} {c.code} ({c.name})
+                              <option key={c.iso} value={c.iso} className="bg-slate-900 text-white">
+                                {c.flag} {c.name} ({c.code})
                               </option>
                             ))}
                           </select>
-                          <ChevronDown size={12} className="absolute right-1.5 text-white/70 pointer-events-none" />
                         </div>
                         <input
                           name="phone"
@@ -688,7 +693,7 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                             const val = e.target.value;
                             setSignupLocalPhone(val);
                             const cleanLocal = val.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
-                            setFormData(prev => ({ ...prev, phone: cleanLocal ? `${signupCountryCode}${cleanLocal}` : '' }));
+                            setFormData(prev => ({ ...prev, phone: cleanLocal ? `${selectedSignupCountry.code}${cleanLocal}` : '' }));
                           }}
                           className="w-full px-3 py-2.5 bg-transparent text-xs font-medium text-white placeholder:text-white/60 outline-none"
                           required

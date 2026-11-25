@@ -21,17 +21,19 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
 }) => {
     const initialParsed = parseStoredPhone(user.phone);
     const [fullName, setFullName] = useState(user.name || '');
-    const [countryCode, setCountryCode] = useState(initialParsed.countryCode);
+    const [selectedIso, setSelectedIso] = useState(initialParsed.iso);
     const [localPhone, setLocalPhone] = useState(initialParsed.localNumber);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const selectedCountry = COUNTRY_DIAL_CODES.find(c => c.iso === selectedIso) || COUNTRY_DIAL_CODES[0];
 
     React.useEffect(() => {
         if (user.name && !fullName) setFullName(user.name);
         if (user.phone) {
             const parsed = parseStoredPhone(user.phone);
             if (!localPhone) {
-                setCountryCode(parsed.countryCode);
+                setSelectedIso(parsed.iso);
                 setLocalPhone(parsed.localNumber);
             }
         }
@@ -56,7 +58,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
             return;
         }
 
-        const formattedPhone = formatFullPhone(countryCode, cleanLocal);
+        const formattedPhone = formatFullPhone(selectedCountry.code, cleanLocal);
 
         setIsLoading(true);
 
@@ -162,28 +164,31 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Mobile Phone with Integrated Country Selector */}
+                    {/* Mobile Phone with Compact Flag-Only Selector */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 flex items-center justify-between">
                             <span>Mobile Phone Number</span>
                             <span className="text-red-500 font-semibold text-[10px]">Required</span>
                         </label>
                         <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
-                            {/* Country Selector Dropdown */}
-                            <div className="relative flex items-center bg-slate-100/90 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shrink-0">
+                            {/* Flag-Only Dropdown Trigger */}
+                            <div className="relative flex items-center bg-slate-100/90 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shrink-0 px-3 cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors">
+                                <div className="flex items-center gap-1.5 pointer-events-none select-none">
+                                    <span className="text-xl leading-none">{selectedCountry.flag}</span>
+                                    <ChevronDown size={13} className="text-slate-400" />
+                                </div>
                                 <select
-                                    value={countryCode}
-                                    onChange={(e) => setCountryCode(e.target.value)}
-                                    aria-label="Select country code"
-                                    className="appearance-none bg-transparent pl-3 pr-7 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none"
+                                    value={selectedIso}
+                                    onChange={(e) => setSelectedIso(e.target.value)}
+                                    aria-label="Select country"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
                                 >
                                     {COUNTRY_DIAL_CODES.map((c) => (
-                                        <option key={c.iso} value={c.code} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                            {c.flag} {c.code} ({c.name})
+                                        <option key={c.iso} value={c.iso} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                            {c.flag} {c.name} ({c.code})
                                         </option>
                                     ))}
                                 </select>
-                                <ChevronDown size={14} className="absolute right-2 text-slate-400 pointer-events-none" />
                             </div>
 
                             {/* Local Phone Input */}

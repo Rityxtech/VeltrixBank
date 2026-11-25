@@ -64,21 +64,21 @@ export const COUNTRY_DIAL_CODES: CountryDialCode[] = [
 /**
  * Splits an existing stored phone string into [countryCode, localNumber]
  */
-export function parseStoredPhone(phoneStr?: string): { countryCode: string; localNumber: string } {
+export function parseStoredPhone(phoneStr?: string): { countryCode: string; iso: string; localNumber: string } {
     if (!phoneStr || !phoneStr.trim()) {
-        return { countryCode: '+1', localNumber: '' };
+        return { countryCode: '+1', iso: 'US', localNumber: '' };
     }
     const clean = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
     const sorted = [...COUNTRY_DIAL_CODES].sort((a, b) => b.code.length - a.code.length);
     for (const c of sorted) {
         if (clean.startsWith(c.code)) {
-            return { countryCode: c.code, localNumber: clean.slice(c.code.length) };
+            return { countryCode: c.code, iso: c.iso, localNumber: clean.slice(c.code.length) };
         }
     }
     if (clean.startsWith('+')) {
-        return { countryCode: '+1', localNumber: clean.slice(1) };
+        return { countryCode: '+1', iso: 'US', localNumber: clean.slice(1) };
     }
-    return { countryCode: '+1', localNumber: clean };
+    return { countryCode: '+1', iso: 'US', localNumber: clean };
 }
 
 /**
