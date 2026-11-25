@@ -16,6 +16,59 @@ const PUBLIC_TABLES = ['mvp_app_settings', 'mvp_waitlist'];
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const DEFAULT_SENDER = process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
 
+// ─── Twilio SMS Configuration ──────────────────────────────
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER || '+12708180223';
+
+async function sendSmsWithTwilio(recipient: string, content: string, senderName?: string) {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+    console.warn('[Twilio] SMS suppressed: Twilio credentials missing');
+    return { success: false, suppressed: true, message: 'Twilio not configured' };
+  }
+
+  let formattedRecipient = recipient.trim().replace(/[\s\-\(\)]/g, '');
+  if (!formattedRecipient.startsWith('+')) {
+    formattedRecipient = '+' + formattedRecipient;
+  }
+
+  const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
+  const endpoint = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+
+  const sendTwilioRequest = async (bodyText: string) => {
+    const params = new URLSearchParams();
+    params.append('To', formattedRecipient);
+    params.append('From', TWILIO_PHONE_NUMBER);
+    params.append('Body', bodyText);
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params
+    });
+    return res.json();
+  };
+
+  console.log(`[Twilio] Sending SMS to ${formattedRecipient}...`);
+  let data = await sendTwilioRequest(content);
+
+  // If in trial mode (Twilio error 572006: trial accounts can only use pre-defined templates)
+  if (data?.code === 572006) {
+    console.warn('[Twilio] Trial account detected. Sending pre-approved trial template: sms_account_alerts');
+    data = await sendTwilioRequest('sms_account_alerts');
+  }
+
+  if (data?.error_code || (data?.status && data.status >= 400)) {
+    throw new Error(data.message || `Twilio error ${data.status}`);
+  }
+
+  console.log(`[Twilio] SMS successfully queued/sent. SID: ${data.sid}`);
+  return data;
+}
+
 async function sendEmailWithResend(to: string, subject: string, html: string, fromName?: string, fromEmail?: string) {
   const resolvedName = fromName || 'Veltrix Bank';
   let resolvedEmail = fromEmail || process.env.RESEND_SENDER || 'support@publicaffairsimf.org';
@@ -64,14 +117,14 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
   if (!op) {
     return res.status(400).json({ error: 'Missing required field: op' });
   }
-  const PUBLIC_OPS = ['send_email', 'store_otp', 'verify_otp', 'reset_password', 'confirm_email', 'create_confirmed_user'];
+  const PUBLIC_OPS = ['send_email', 'send_sms', 'store_otp', 'verify_otp', 'reset_password', 'confirm_email', 'create_confirmed_user'];
   if (!PUBLIC_OPS.includes(op) && !table) {
     return res.status(400).json({ error: 'Missing required field: table' });
   }
 
   const isPublicTable = PUBLIC_TABLES.includes(table);
   const isRead = op === 'read';
-  const isPublicOp = ['send_email', 'store_otp', 'verify_otp', 'reset_password', 'confirm_email', 'create_confirmed_user'].includes(op);
+  const isPublicOp = PUBLIC_OPS.includes(op);
   const needsAuth = !isPublicTable || !isRead;
 
   let authToken = req.headers.authorization?.replace('Bearer ', '');
@@ -145,6 +198,21 @@ async function handleRequest(req: VercelRequest, res: VercelResponse) {
         } catch (err: any) {
           console.error('[Resend] Failed to send email:', err.message);
           return res.status(500).json({ success: false, error: 'Failed to send email: ' + err.message });
+        }
+      }
+
+      case 'send_sms': {
+        const { to, content, sender } = parsedBody;
+        if (!to || !content) {
+          return res.status(400).json({ error: 'Missing required fields: to, content' });
+        }
+        try {
+          const info = await sendSmsWithTwilio(to, content, sender);
+          console.log(`[Twilio] SMS sent to ${to}:`, info);
+          return res.json({ success: true, info, provider: 'twilio' });
+        } catch (err: any) {
+          console.error('[Twilio] Failed to send SMS:', err.message);
+          return res.status(500).json({ success: false, error: 'Failed to send SMS: ' + err.message });
         }
       }
 

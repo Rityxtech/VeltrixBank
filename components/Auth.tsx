@@ -326,6 +326,10 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
 
     if (formData.pin.length !== 4) return setError("PIN must be 4 digits.");
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) return setError("Missing required fields.");
+    const cleanPhone = formData.phone?.trim().replace(/[\s\-\(\)]/g, '') || '';
+    if (!cleanPhone || cleanPhone.length < 8) {
+      return setError("A valid mobile phone number with country code is required.");
+    }
 
     setIsLoading(true);
     setError('');
@@ -648,7 +652,21 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                       <p className="text-[10px] font-bold text-white/90 uppercase tracking-widest">Additional Details</p>
                     </div>
                     <input name="username" placeholder="Username" value={formData.username} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required />
-                    <input name="phone" type="tel" placeholder="Phone" value={formData.phone} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} />
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70" size={14} />
+                        <input
+                          name="phone"
+                          type="tel"
+                          placeholder="Phone (e.g. +1 555 123 4567)"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className={`${inputClass} !pl-9`}
+                          required
+                        />
+                      </div>
+                      <p className="text-[9px] text-white/70 pl-1 font-medium">Required: Include country code (e.g. +1, +44, +234)</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-2"><input name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} /><input name="country" placeholder="Country" value={formData.country} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} /></div>
                     <button type="submit" disabled={isLoading} className="w-full py-2.5 bg-emerald-600/80 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] mt-2 flex items-center justify-center gap-2 backdrop-blur-sm border border-emerald-500/30">{isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Complete Registration'}</button>
                     <p className="text-center text-[10px] text-white/90 font-medium pt-1">Have an account? <button type="button" onClick={() => { setSignupStep(1); onSwitch('signin'); }} className="text-white font-bold hover:underline ml-1">Log in</button></p>

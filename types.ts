@@ -49,6 +49,7 @@ export interface User {
   email: string;
   avatarUrl: string;
   pin?: string;
+  phone?: string;
 }
 
 export interface ExpenseData {

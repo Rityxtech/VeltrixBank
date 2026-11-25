@@ -10,6 +10,7 @@ import { APP_CONFIG, setSiteConfig } from './config';
 import { Layout } from './components/ui/Layout';
 import { GlobalLoader } from './components/ui/GlobalLoader';
 import { PinVerificationModal } from './components/ui/PinVerificationModal';
+import { CompleteProfileModal } from './components/ui/CompleteProfileModal';
 import { Dashboard } from './components/Dashboard';
 import { Accounts } from './components/Accounts';
 import { Transactions } from './components/Transactions';
@@ -657,17 +658,21 @@ function App() {
     const [showLimitModal, setShowLimitModal] = useState(false);
     const [limitModalType, setLimitModalType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
+    // Check if logged-in user lacks phone number or profile details
+    const isProfileIncomplete = !!currentUser && (!currentUser.phone || currentUser.phone.trim().length < 8);
+
     // Lock body scroll whenever any modal overlay is active
     useEffect(() => {
         const pinModalActive = !!currentUser && !isAdminMode && !isPinVerified;
-        const anyModalActive = pinModalActive || isModalOpen || showLimitModal;
+        const profileModalActive = isProfileIncomplete;
+        const anyModalActive = pinModalActive || profileModalActive || isModalOpen || showLimitModal;
         if (anyModalActive) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = '';
         }
         return () => { document.body.style.overflow = ''; };
-    }, [currentUser, isAdminMode, isPinVerified, isModalOpen, showLimitModal]);
+    }, [currentUser, isAdminMode, isPinVerified, isProfileIncomplete, isModalOpen, showLimitModal]);
 
     const [userSettings, setUserSettings] = useState({
         emailNotifs: true,
@@ -840,7 +845,7 @@ function App() {
             // Use Supabase directly — MVP API is broken (404)
             const { data: profiles } = await supabase
                 .from('mvp_profiles')
-                .select('id,user_id,full_name,email,role,kyc_level,is_suspended,theme,avatar_url,settings')
+                .select('id,user_id,full_name,email,role,kyc_level,is_suspended,theme,avatar_url,settings,phone')
                 .eq('user_id', userId);
             let profile = profiles?.find((p: any) => p.user_id === userId);
 
@@ -852,6 +857,7 @@ function App() {
                         user_id: userId,
                         full_name: userMetadata?.full_name || `${APP_CONFIG.BRAND_NAME} Client`,
                         email: userMetadata?.email || '',
+                        phone: userMetadata?.phone || '',
                         kyc_level: 0
                     }]);
                 } catch (createErr: any) {
@@ -863,7 +869,7 @@ function App() {
                 }
                 const { data: updatedProfiles } = await supabase
                     .from('mvp_profiles')
-                    .select('id,user_id,full_name,email,role,kyc_level,is_suspended,theme,avatar_url,settings')
+                    .select('id,user_id,full_name,email,role,kyc_level,is_suspended,theme,avatar_url,settings,phone')
                     .eq('user_id', userId);
                 profile = updatedProfiles?.find((p: any) => p.user_id === userId);
             }
@@ -886,7 +892,8 @@ function App() {
                         name: profile.full_name || prev?.name || `${APP_CONFIG.BRAND_NAME} Client`,
                         email: profile.email || prev?.email || '',
                         avatarUrl: prev?.avatarUrl || profile.avatar_url || '',
-                        pin: userMetadata?.pin || prev?.pin
+                        pin: userMetadata?.pin || prev?.pin,
+                        phone: profile.phone || prev?.phone || userMetadata?.phone || ''
                     };
                 });
             }
@@ -1128,7 +1135,8 @@ function App() {
                         name: session.user.user_metadata?.full_name || prev?.name || session.user.email?.split('@')[0] || APP_CONFIG.BANK_NAME + ' Client',
                         email: session.user.email || prev?.email || '',
                         avatarUrl: prev?.avatarUrl || session.user.user_metadata?.avatar_url || '',
-                        pin: session.user.user_metadata?.pin || prev?.pin
+                        pin: session.user.user_metadata?.pin || prev?.pin,
+                        phone: session.user.user_metadata?.phone || prev?.phone || ''
                     };
                 });
 
@@ -1430,7 +1438,7 @@ function App() {
                 if (session) {
                     setIsAccountIncomplete(false);
                     setRawSessionUser(null);
-                    setCurrentUser({ id: session.user.id, name: session.user.user_metadata?.full_name || APP_CONFIG.BANK_NAME, email: session.user.email || '', avatarUrl: '' });
+                    setCurrentUser({ id: session.user.id, name: session.user.user_metadata?.full_name || APP_CONFIG.BANK_NAME, email: session.user.email || '', avatarUrl: '', pin: session.user.user_metadata?.pin, phone: session.user.user_metadata?.phone || '' });
                     initRef.current = null;
                     fetchAllUserData(session.user.id, session.user.user_metadata);
                 }
@@ -1470,6 +1478,15 @@ function App() {
         <div className="relative">
             {globalSettings.maintenanceMode && <div className="bg-amber-500/90 text-white px-4 py-1 text-center text-xs font-bold uppercase tracking-widest sticky top-0 z-[100] backdrop-blur-md">Maintenance Mode Active</div>}
             <AdminDashboard onLogout={handleLogout} onExitAdmin={handleLogout} userAvatar={currentUser.avatarUrl} />
+            {isProfileIncomplete && (
+                <CompleteProfileModal
+                    isOpen={true}
+                    user={currentUser}
+                    onSuccess={({ name, phone }) => {
+                        setCurrentUser(prev => prev ? ({ ...prev, name, phone }) : null);
+                    }}
+                />
+            )}
         </div>
     );
 
@@ -1541,6 +1558,17 @@ function App() {
                     onVerifyOtp={verifyOtpForUser}
                     onUpdatePin={handleUpdatePin}
                     onLogout={handleLogout}
+                />
+            )}
+
+            {/* Profile Completion Modal for existing users missing phone/name */}
+            {isProfileIncomplete && (
+                <CompleteProfileModal
+                    isOpen={true}
+                    user={currentUser}
+                    onSuccess={({ name, phone }) => {
+                        setCurrentUser(prev => prev ? ({ ...prev, name, phone }) : null);
+                    }}
                 />
             )}
 

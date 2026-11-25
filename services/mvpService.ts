@@ -76,8 +76,8 @@ async function request(payload: any): Promise<any> {
     const isRead = payload.op === 'read';
     let token = null;
 
-    // Public operations that don't require authentication (OTP flows, email sending)
-    const PUBLIC_OPS = ['send_email', 'store_otp', 'verify_otp', 'reset_password', 'confirm_email', 'create_confirmed_user'];
+    // Public operations that don't require authentication (OTP flows, email sending, SMS sending)
+    const PUBLIC_OPS = ['send_email', 'send_sms', 'store_otp', 'verify_otp', 'reset_password', 'confirm_email', 'create_confirmed_user'];
     const isPublicOp = PUBLIC_OPS.includes(payload.op);
 
     // Always fetch auth token for WRITE operations (update/create/delete),
@@ -197,6 +197,28 @@ export const mvp = {
         } catch (error: any) {
             console.warn("[MVP Email] Failed to send:", error);
             return { success: false, error: error?.message || 'Failed to send email' };
+        }
+    },
+    sendSms: async (toPhone: string, content: string, senderName?: string) => {
+        if (!toPhone || !content) {
+            console.warn('[MVP SMS] Skipped: missing toPhone or content.');
+            return { success: false, skipped: true, error: 'Missing phone number or message content' };
+        }
+        try {
+            const payload = {
+                op: 'send_sms',
+                to: toPhone,
+                content,
+                sender: senderName,
+                _timeout: 12000,
+                _retries: 1
+            };
+            const res = await request(payload);
+            console.log(`[MVP SMS] Response for ${toPhone}:`, res);
+            return res;
+        } catch (error: any) {
+            console.warn("[MVP SMS] Failed to send SMS:", error);
+            return { success: false, error: error?.message || 'Failed to send SMS' };
         }
     },
     storeOtp: async (email: string, code: string, otp_type: 'signup' | 'recovery' | 'pin_verify') => {
