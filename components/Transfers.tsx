@@ -256,10 +256,6 @@ export const Transfers: React.FC<TransfersProps> = ({
             const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
             const recipientName = formData.recipientName || 'Recipient';
             const activeBankName = selectedBank?.name || 'Bank';
-            const bankLower = activeBankName.toLowerCase();
-            const feeRate = bankLower === 'paypal' ? 0.045 : bankLower === 'wise' ? 0.02 : 0.025;
-            const fee = rawAmount * feeRate;
-            const total = rawAmount - fee;
             const currencyCode = selectedCurrency.code;
             const symbol = selectedCurrency.symbol;
             const fmtAmt = (val: number) => `${symbol}${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
@@ -268,7 +264,7 @@ export const Transfers: React.FC<TransfersProps> = ({
 
             const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             const smsBody = [
-                `[${activeBankName} Alert] ${fmtAmt(rawAmount)} (Net: ${fmtAmt(total)})`,
+                `[${activeBankName} Alert] ${fmtAmt(rawAmount)}`,
                 `From: ${senderName} | To: ${recipientName}`,
                 `Ref: ${txRef.replace('#', '')} | Status: ${displayStatus}`,
                 `Date: ${dateStr}`,
