@@ -197,7 +197,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({
                                 required
                                 value={localPhone}
                                 onChange={(e) => setLocalPhone(e.target.value)}
-                                placeholder="801 234 5678"
+                                placeholder={selectedCountry.code === '+1' ? '(555) 000-0000' : 'Phone number'}
                                 className="w-full px-3.5 py-2.5 sm:py-3 bg-transparent text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
                             />
                         </div>

@@ -687,7 +687,7 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                         <input
                           name="phone"
                           type="tel"
-                          placeholder="Phone Number (e.g. 704 061 3947)"
+                          placeholder={selectedSignupCountry.code === '+1' ? '(555) 000-0000' : 'Phone number'}
                           value={signupLocalPhone}
                           onChange={(e) => {
                             const val = e.target.value;
