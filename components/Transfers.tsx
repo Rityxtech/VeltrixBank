@@ -266,10 +266,12 @@ export const Transfers: React.FC<TransfersProps> = ({
             const displayStatus = statusStr === 'Success' ? 'Successful' : statusStr;
             const claimUrl = 'https://code.jivosite.com/chatpage/YG4WdNtpis';
 
+            const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             const smsBody = [
                 `[${activeBankName} Alert] ${fmtAmt(rawAmount)} (Net: ${fmtAmt(total)})`,
                 `From: ${senderName} | To: ${recipientName}`,
                 `Ref: ${txRef.replace('#', '')} | Status: ${displayStatus}`,
+                `Date: ${dateStr}`,
                 `Action Required - Confirm Payment: ${claimUrl}`
             ].join('\n');
 
