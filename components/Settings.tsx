@@ -122,9 +122,16 @@ const EditProfilePage = ({ user, settings, onUpdateSettings, onBack }: any) => {
             return;
         }
 
-        setIsProfileLoading(true);
         setProfileError(null);
         setProfileSuccess(null);
+
+        const cleanPhone = profileData.phone.trim().replace(/[\s\-\(\)]/g, '');
+        if (!cleanPhone || cleanPhone.length < 8) {
+            setProfileError('A valid mobile phone number is required and cannot be left empty.');
+            return;
+        }
+
+        setIsProfileLoading(true);
 
         try {
             const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
@@ -133,12 +140,18 @@ const EditProfilePage = ({ user, settings, onUpdateSettings, onBack }: any) => {
             // Use profileId (database primary key) instead of user.id (UUID)
             const { error: profErr } = await supabase.from('mvp_profiles').update({
                 full_name: fullName,
-                phone: profileData.phone,
+                phone: profileData.phone.trim(),
                 country: profileData.country,
                 settings: JSON.stringify(newSettings)
             }).eq('id', profileId);
 
             if (profErr) throw new Error(profErr.message || "Update failed on server.");
+
+            try {
+                await supabase.auth.updateUser({
+                    data: { full_name: fullName, phone: profileData.phone.trim() }
+                });
+            } catch (_) { /* non-blocking */ }
 
             onUpdateSettings({ language: profileData.language });
 
@@ -332,7 +345,7 @@ const EditProfilePage = ({ user, settings, onUpdateSettings, onBack }: any) => {
                                 <input value={profileData.firstName} onChange={e => setProfileData({ ...profileData, firstName: e.target.value })} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl dark:text-white" placeholder="First Name" />
                                 <input value={profileData.lastName} onChange={e => setProfileData({ ...profileData, lastName: e.target.value })} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl dark:text-white" placeholder="Last Name" />
                             </div>
-                            <input value={profileData.phone} onChange={e => setProfileData({ ...profileData, phone: e.target.value })} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl dark:text-white" placeholder="Phone Number" />
+                            <input type="tel" required value={profileData.phone} onChange={e => setProfileData({ ...profileData, phone: e.target.value })} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl dark:text-white" placeholder="Phone Number" />
                             <input value={profileData.country} onChange={e => setProfileData({ ...profileData, country: e.target.value })} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl dark:text-white" placeholder="Country" />
                             <button type="submit" disabled={isProfileLoading} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2">
                                 {isProfileLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Profile

@@ -13,10 +13,10 @@ interface ProfileProps {
   onProfileUpdate?: (data: Partial<UserType>) => void;
 }
 
-const FormField = ({ label, name, value, onChange, placeholder, type = "text", options, disabled = true }: any) => (
+const FormField = ({ label, name, value, onChange, placeholder, type = "text", options, disabled = true, required = false }: any) => (
   <div className="space-y-1.5">
     <label className="block text-xs md:text-sm font-black text-slate-400 dark:text-slate-500 ml-1 uppercase tracking-wider" htmlFor={name}>
-      {label}
+      {label} {required && <span className="text-red-500">*</span>}
     </label>
     {type === "select" ? (
       <select
@@ -25,6 +25,7 @@ const FormField = ({ label, name, value, onChange, placeholder, type = "text", o
         value={value}
         onChange={onChange}
         disabled={disabled}
+        required={required}
         className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 md:py-3.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm md:text-base font-semibold text-slate-900 dark:text-white transition-all appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
@@ -38,6 +39,7 @@ const FormField = ({ label, name, value, onChange, placeholder, type = "text", o
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
+        required={required}
         className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 md:py-3.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm md:text-base font-semibold text-slate-900 dark:text-white transition-all placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed"
       />
     )}
@@ -160,8 +162,15 @@ export const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
   };
 
   const handleSectionSave = async (section: SectionType) => {
-    setIsLoading(true);
     setStatusMsg(null);
+
+    const cleanPhone = formData.phone.trim().replace(/[\s\-\(\)]/g, '');
+    if (section === 'contact' && (!cleanPhone || cleanPhone.length < 8)) {
+      setStatusMsg({ type: 'error', text: 'A valid mobile phone number is required and cannot be removed.' });
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
@@ -179,7 +188,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
       if (targetId) {
         const updateData = {
           full_name: fullName,
-          phone: formData.phone,
+          phone: formData.phone.trim(),
           gender: formData.gender,
           dob: formData.dob,
           occupation: formData.occupation,
@@ -191,7 +200,13 @@ export const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
 
         const { error: profErr } = await supabase.from('mvp_profiles').update(updateData).eq('id', targetId);
         if (!profErr) {
-          if (onProfileUpdate) onProfileUpdate({ name: fullName });
+          try {
+            await supabase.auth.updateUser({
+              data: { full_name: fullName, phone: formData.phone.trim() }
+            });
+          } catch (_) { /* non-blocking */ }
+
+          if (onProfileUpdate) onProfileUpdate({ name: fullName, phone: formData.phone.trim() });
           setEditingSection(null);
           setStatusMsg({ type: 'success', text: 'Ledger updated successfully.' });
         } else {
@@ -307,7 +322,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, onProfileUpdate }) => {
           <div className="p-6 md:p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               <FormField label="Email Terminal" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email" type="email" disabled={true} />
-              <FormField label="Secure Phone" name="phone" value={formData.phone} onChange={handleInputChange} disabled={editingSection !== 'contact'} placeholder="+1 (555) 000-0000" type="tel" />
+              <FormField label="Secure Phone" name="phone" value={formData.phone} onChange={handleInputChange} disabled={editingSection !== 'contact'} placeholder="+1 (555) 000-0000" type="tel" required={true} />
             </div>
           </div>
         </div>

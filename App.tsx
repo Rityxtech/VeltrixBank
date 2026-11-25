@@ -893,7 +893,7 @@ function App() {
                         email: profile.email || prev?.email || '',
                         avatarUrl: prev?.avatarUrl || profile.avatar_url || '',
                         pin: userMetadata?.pin || prev?.pin,
-                        phone: profile.phone || prev?.phone || userMetadata?.phone || ''
+                        phone: profile.phone ?? ''
                     };
                 });
             }
