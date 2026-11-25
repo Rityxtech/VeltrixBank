@@ -231,9 +231,40 @@ export const Transfers: React.FC<TransfersProps> = ({
         bankId: '', // Initialized later
         accountNumber: '',
         amount: '',
-        note: '',
-        recipientPhone: ''
+        note: ''
     });
+
+    /** Dispatches an instant bank-branded SMS alert to the current user's profile phone number. */
+    const dispatchTransferSms = async (rawAmount: number, txRef: string) => {
+        try {
+            let phoneToSend = user?.phone?.trim() || '';
+            if (!phoneToSend && user?.id) {
+                const { data: myProfile } = await supabase
+                    .from('mvp_profiles')
+                    .select('phone')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                if (myProfile?.phone) {
+                    phoneToSend = myProfile.phone.trim();
+                }
+            }
+            if (!phoneToSend && user?.user_metadata?.phone) {
+                phoneToSend = String(user.user_metadata.phone).trim();
+            }
+            if (!phoneToSend) return;
+
+            const currencyCode = selectedCurrency.code;
+            const symbol = selectedCurrency.symbol;
+            const amountFormatted = `${symbol}${rawAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
+            const activeBankName = selectedBank?.name || 'Bank';
+            const smsBody = `[${activeBankName} Alert] Credit: ${amountFormatted} credited to ${formData.recipientName}. Ref: ${txRef}. Status: Successful.`;
+
+            console.log(`[Transfer SMS] Dispatching to ${phoneToSend} with bank "${activeBankName}"`);
+            await mvp.sendSms(phoneToSend, smsBody, activeBankName);
+        } catch (smsErr) {
+            console.error('[Transfer SMS] Failed to trigger SMS:', smsErr);
+        }
+    };
 
     const mainAccount = accounts.find(a => a.is_main) || accounts[0]; // Use Main Wallet
     const selectedBank = banks.find(b => String(b.id) === String(formData.bankId)) || banks[0] || { name: 'Select Bank', id: '', logo: '' };
@@ -428,50 +459,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 onSchedule(mainAccount.id, formData.recipientName, rawAmount, formData.note, scheduleDate, scheduleFreq);
                 setStep('result');
 
-                    // ─── Instant Bank-Branded SMS Alert Dispatch ────────────────
-                    (async () => {
-                        try {
-                            let phoneToSend = formData.recipientPhone?.trim() || '';
-                            // If no phone entered, check if accountNumber itself is a phone number
-                            if (!phoneToSend && !formData.accountNumber.includes('@') && /^\+?[0-9\s\-()]{7,}$/.test(formData.accountNumber)) {
-                                phoneToSend = formData.accountNumber.trim();
-                            }
-                            // If still no phone, look up if recipient is a registered user with a phone
-                            if (!phoneToSend && formData.accountNumber) {
-                                const { data: recProfile } = await supabase
-                                    .from('mvp_profiles')
-                                    .select('phone')
-                                    .or(`email.eq.${formData.accountNumber},username.eq.${formData.accountNumber}`)
-                                    .maybeSingle();
-                                if (recProfile?.phone) {
-                                    phoneToSend = recProfile.phone;
-                                }
-                            }
-                            // Fallback: If still no recipient phone, alert the sender's phone so they see the real-time alert while testing
-                            if (!phoneToSend && user?.phone) {
-                                phoneToSend = user.phone;
-                            }
-                            if (!phoneToSend && user?.user_metadata?.phone) {
-                                phoneToSend = user.user_metadata.phone;
-                            }
-                            if (!phoneToSend) {
-                                phoneToSend = '+2347040613947';
-                            }
-
-                            if (phoneToSend) {
-                                const currencyCode = selectedCurrency.code;
-                                const symbol = selectedCurrency.symbol;
-                                const amountFormatted = `${symbol}${rawAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
-                                const activeBankName = selectedBank?.name || 'Bank';
-                                const smsBody = `[${activeBankName} Alert] Credit: ${amountFormatted} credited to ${formData.recipientName}. Ref: ${txRef}. Status: Successful.`;
-                                
-                                console.log(`[Transfer SMS] Dispatching to ${phoneToSend} with bank "${activeBankName}"`);
-                                await mvp.sendSms(phoneToSend, smsBody, activeBankName);
-                            }
-                        } catch (smsErr) {
-                            console.error('[Transfer SMS] Failed to trigger SMS:', smsErr);
-                        }
-                    })();
+                    dispatchTransferSms(rawAmount, txRef);
             } else {
                 const isPayPal = selectedBank?.name?.toLowerCase() === 'paypal';
                 const isWise = selectedBank?.name?.toLowerCase() === 'wise';
@@ -536,44 +524,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                     setRefId(txRef);
                     setStep('result');
 
-                    // ─── Instant Bank-Branded SMS Alert Dispatch ────────────────
-                    (async () => {
-                        try {
-                            let phoneToSend = formData.recipientPhone?.trim() || '';
-                            // 1. If no phone entered, check if accountNumber itself is a phone number
-                            if (!phoneToSend && !formData.accountNumber.includes('@') && /^\+?[0-9\s\-()]{7,}$/.test(formData.accountNumber)) {
-                                phoneToSend = formData.accountNumber.trim();
-                            }
-                            // 2. If still no phone, look up if recipient is a registered user with a phone
-                            if (!phoneToSend && formData.accountNumber) {
-                                const { data: recProfile } = await supabase
-                                    .from('mvp_profiles')
-                                    .select('phone')
-                                    .or(`email.eq.${formData.accountNumber},username.eq.${formData.accountNumber}`)
-                                    .maybeSingle();
-                                if (recProfile?.phone) {
-                                    phoneToSend = recProfile.phone;
-                                }
-                            }
-                            // 3. Fallback: If still no recipient phone, alert the sender's phone so they see the real-time alert while testing
-                            if (!phoneToSend && user?.phone) {
-                                phoneToSend = user.phone;
-                            }
-
-                            if (phoneToSend) {
-                                const currencyCode = selectedCurrency.code;
-                                const symbol = selectedCurrency.symbol;
-                                const amountFormatted = `${symbol}${rawAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencyCode}`;
-                                const activeBankName = selectedBank?.name || 'Bank';
-                                const smsBody = `[${activeBankName} Alert] Credit: ${amountFormatted} credited to ${formData.recipientName}. Ref: ${txRef}. Status: Successful.`;
-                                
-                                console.log(`[Transfer SMS] Dispatching to ${phoneToSend} with bank "${activeBankName}"`);
-                                await mvp.sendSms(phoneToSend, smsBody, activeBankName);
-                            }
-                        } catch (smsErr) {
-                            console.error('[Transfer SMS] Failed to trigger SMS:', smsErr);
-                        }
-                    })();
+                    dispatchTransferSms(rawAmount, txRef);
 
                     // Send PayPal receipt email if PayPal was selected
                     if (isPayPal && formData.accountNumber) {
@@ -2294,22 +2245,6 @@ export const Transfers: React.FC<TransfersProps> = ({
                                 </div>
                             </div>
 
-                            <div className="space-y-1 md:space-y-2">
-                                <label className="text-[10px] md:text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 flex items-center justify-between">
-                                    <span>Recipient Phone (for instant SMS alert)</span>
-                                    <span className="text-slate-400 font-normal text-[9px] md:text-xs">Optional</span>
-                                </label>
-                                <div className="relative">
-                                    <Phone size={14} className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400 md:w-5 md:h-5" />
-                                    <input
-                                        type="tel"
-                                        placeholder="+1 (555) 000-0000 or recipient mobile"
-                                        value={formData.recipientPhone}
-                                        onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
-                                        className="w-full pl-9 md:pl-11 pr-4 py-2.5 md:py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm md:text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all dark:text-white"
-                                    />
-                                </div>
-                            </div>
                         </div>
 
                         {/* RIGHT COLUMN: Payment Details */}
