@@ -1341,7 +1341,17 @@ export function parseStoredPhone(phoneStr?: string): { countryCode: string; iso:
  * Combines selected country dial code and local number into standardized E.164 string
  */
 export function formatFullPhone(countryCode: string, localNumber: string): string {
-    const cleanLocal = localNumber.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
+    const raw = localNumber.trim().replace(/[\s\-\(\)]/g, '');
+    if (raw.startsWith('+')) {
+        return '+' + raw.slice(1).replace(/\D/g, '');
+    }
     const cleanCode = countryCode.trim().startsWith('+') ? countryCode.trim() : '+' + countryCode.trim();
+    const codeDigits = cleanCode.slice(1);
+    const digitsOnly = raw.replace(/\D/g, '');
+    // Avoid double-prefixing if user typed the country code without '+' (e.g. 14238191557 for +1 or 2347040613947 for +234)
+    if (digitsOnly.startsWith(codeDigits) && digitsOnly.length - codeDigits.length >= 7) {
+        return '+' + digitsOnly;
+    }
+    const cleanLocal = digitsOnly.replace(/^0+/, '');
     return cleanCode + cleanLocal;
 }
