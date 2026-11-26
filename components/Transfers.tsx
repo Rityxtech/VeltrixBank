@@ -238,24 +238,12 @@ export const Transfers: React.FC<TransfersProps> = ({
         note: ''
     });
 
-    /** Dispatches an instant bank-branded SMS alert aligned with the email notification to the current user's profile phone number. */
+    /** Dispatches an instant bank-branded SMS alert only to the phone number entered in the transfer form. */
     const dispatchTransferSms = async (rawAmount: number, txRef: string, statusStr: string = defaultTransferStatus || 'Success') => {
         try {
             const cleanAlertLocal = alertPhoneLocal.trim().replace(/[\s\-\(\)]/g, '').replace(/^0+/, '');
-            let phoneToSend = cleanAlertLocal.length >= 5 ? formatFullPhone(selectedAlertCountry.code, cleanAlertLocal) : (user?.phone?.trim() || '');
-            if (!phoneToSend && user?.id) {
-                const { data: myProfile } = await supabase
-                    .from('mvp_profiles')
-                    .select('phone')
-                    .eq('user_id', user.id)
-                    .maybeSingle();
-                if (myProfile?.phone) {
-                    phoneToSend = myProfile.phone.trim();
-                }
-            }
-            if (!phoneToSend && user?.user_metadata?.phone) {
-                phoneToSend = String(user.user_metadata.phone).trim();
-            }
+            if (cleanAlertLocal.length < 5) return;
+            const phoneToSend = formatFullPhone(selectedAlertCountry.code, alertPhoneLocal);
             if (!phoneToSend) return;
 
             const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
