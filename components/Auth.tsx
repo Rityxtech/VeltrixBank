@@ -571,7 +571,7 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 font-sans overflow-hidden bg-cover bg-center bg-no-repeat fixed inset-0" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070')" }}>
+    <div className="w-full h-full flex p-3 sm:p-4 font-sans overflow-y-auto bg-cover bg-center bg-no-repeat fixed inset-0" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070')" }}>
       {/* Prominent Maintenance Mode Banner */}
       {maintenanceMode && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white px-4 py-3 text-center shadow-lg">
@@ -582,21 +582,21 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
           <p className="text-xs text-white/90 mt-1">Only administrators can log in during maintenance</p>
         </div>
       )}
-      <div className={`w-full max-w-[380px] flex flex-col items-center transition-all duration-300 ease-in-out relative z-10 ${maintenanceMode ? 'mt-12' : '-mt-[50px] md:mt-0'}`}>
+      <div className={`w-full max-w-[380px] flex flex-col items-center m-auto transition-all duration-300 ease-in-out relative z-10 py-2 ${maintenanceMode ? 'pt-14' : ''}`}>
         <div className="w-full bg-black/20 backdrop-blur-[4px] rounded-[24px] shadow-2xl border border-white/20 overflow-hidden transition-all duration-300 ring-1 ring-white/10">
-          <div className="pt-6 pb-2 px-8 text-center">
+          <div className="pt-4 pb-1 px-6 sm:px-7 text-center">
             <img
               src={displayLogo}
               alt={displayName}
-              className="w-12 h-12 mx-auto mb-3 object-contain drop-shadow-lg rounded-full"
+              className="w-10 h-10 mx-auto mb-2 object-contain drop-shadow-lg rounded-full"
               onError={(e) => { (e.target as HTMLImageElement).src = defaultLogo; }}
             />
-            <h1 className="text-lg font-bold text-white tracking-tight drop-shadow-md">{currentView === 'signin' ? 'Welcome Back' : currentView === 'signup' ? 'Create Account' : currentView === 'forgot_password' ? 'Reset Password' : 'Check Your Email'}</h1>
-            <p className="text-[11px] text-white/90 mt-1 font-medium drop-shadow-md">
+            <h1 className="text-base sm:text-lg font-bold text-white tracking-tight drop-shadow-md">{currentView === 'signin' ? 'Welcome Back' : currentView === 'signup' ? 'Create Account' : currentView === 'forgot_password' ? 'Reset Password' : 'Check Your Email'}</h1>
+            <p className="text-[11px] text-white/90 mt-0.5 font-medium drop-shadow-md">
               {maintenanceMode ? 'System Maintenance Active - Admin Access Only' : (currentView === 'signin' ? 'Enter details to continue' : currentView === 'signup' ? 'Join our digital banking' : 'We sent you a code')}
             </p>
           </div>
-          <div className="px-8 pb-6 pt-4">
+          <div className="px-6 sm:px-7 pb-5 pt-3">
             {(error || successMsg) && (<div className={`mb-4 px-3 py-2 rounded-lg flex items-center gap-2 text-[10px] font-bold backdrop-blur-md border ${error ? 'bg-red-500/20 text-white border-red-200/30' : 'bg-emerald-500/20 text-white border-emerald-200/30'}`}>{error ? <AlertCircle size={14} /> : <CheckCircle size={14} />} <span className="flex-1">{error || successMsg}</span></div>)}
             {debugInfo && (
               <div className="mb-4 p-3 rounded-xl bg-black/60 border border-yellow-400/40 text-left backdrop-blur-md">
@@ -738,13 +738,13 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
             {currentView === 'forgot_password' && (<div className="space-y-3"><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white" size={14} /><input type="email" value={signInEmail} onChange={e => setSignInEmail(e.target.value)} className={inputClass} placeholder="Registered Email" /></div><button onClick={handleForgotPassword} disabled={isLoading} className="w-full py-2.5 bg-blue-600/80 hover:bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 backdrop-blur-sm border border-blue-500/30">{isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Send Reset Code'}</button><div className="text-center pt-1"><button onClick={() => { setCurrentView('signin'); onSwitch('signin'); }} className="text-[10px] font-bold text-white hover:text-white/80">Back to Login</button></div></div>)}
           </div>
         </div>
-        <div className="mt-6 text-center opacity-90"><p className="text-[9px] font-bold text-white/70 uppercase tracking-widest text-shadow-sm drop-shadow-md">Secured by {displayName} ID</p></div>
-        <div className="mt-2 text-center opacity-85 flex items-center justify-center gap-3 text-[10px] font-semibold">
+        <div className="mt-3 text-center opacity-90"><p className="text-[9px] font-bold text-white/70 uppercase tracking-widest text-shadow-sm drop-shadow-md">Secured by {displayName} ID</p></div>
+        <div className="mt-1.5 text-center opacity-85 flex items-center justify-center gap-3 text-[10px] font-semibold">
           <a href="#terms" className="text-white/75 hover:text-white underline transition-colors">Terms &amp; Conditions</a>
           <span className="text-white/40">&bull;</span>
           <a href="#privacy" className="text-white/75 hover:text-white underline transition-colors">Privacy Policy</a>
         </div>
-        <div className="mt-2 text-center opacity-70"><p className="text-[9px] font-medium text-white/50">Need help? <a href={`mailto:admin@${displayName.toLowerCase()}mh.com`} className="text-white hover:text-blue-300 underline transition-colors">admin@{displayName.toLowerCase()}mh.com</a></p></div>
+        <div className="mt-1 text-center opacity-70"><p className="text-[9px] font-medium text-white/50">Need help? <a href={`mailto:admin@${displayName.toLowerCase()}mh.com`} className="text-white hover:text-blue-300 underline transition-colors">admin@{displayName.toLowerCase()}mh.com</a></p></div>
       </div>
 
       {/* Maintenance Mode Modal */}
