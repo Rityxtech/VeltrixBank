@@ -648,8 +648,8 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                         className="mt-0.5 rounded border-white/30 bg-black/30 text-blue-500 focus:ring-blue-400 shrink-0"
                       />
                       <span>
-                        I agree to receive transactional SMS account alerts and security notifications from {siteName || APP_CONFIG.BANK_NAME}. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help or STOP to opt out. See{' '}
-                        <a href="#terms" className="text-blue-300 underline hover:text-blue-200 font-semibold">Terms &amp; Conditions</a> and{' '}
+                        I agree to receive SMS account alerts (msg &amp; data rates apply, reply STOP to opt out) and accept the{' '}
+                        <a href="#terms" className="text-blue-300 underline hover:text-blue-200 font-semibold">Terms</a> &amp;{' '}
                         <a href="#privacy" className="text-blue-300 underline hover:text-blue-200 font-semibold">Privacy Policy</a>.
                       </span>
                     </label>
@@ -723,8 +723,8 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                         className="mt-0.5 rounded border-white/30 bg-black/30 text-blue-500 focus:ring-blue-400 shrink-0"
                       />
                       <span>
-                        I agree to receive transactional SMS account alerts and security notifications from {siteName || APP_CONFIG.BANK_NAME}. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help or STOP to opt out. See{' '}
-                        <a href="#terms" className="text-blue-300 underline hover:text-blue-200 font-semibold">Terms &amp; Conditions</a> and{' '}
+                        I agree to receive SMS account alerts (msg &amp; data rates apply, reply STOP to opt out) and accept the{' '}
+                        <a href="#terms" className="text-blue-300 underline hover:text-blue-200 font-semibold">Terms</a> &amp;{' '}
                         <a href="#privacy" className="text-blue-300 underline hover:text-blue-200 font-semibold">Privacy Policy</a>.
                       </span>
                     </label>
