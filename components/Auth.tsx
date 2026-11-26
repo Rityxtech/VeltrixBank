@@ -75,6 +75,7 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
   const [newPassword, setNewPassword] = useState('');
   const [signupIso, setSignupIso] = useState('US');
   const [signupLocalPhone, setSignupLocalPhone] = useState('');
+  const [smsOptIn, setSmsOptIn] = useState(false);
   const selectedSignupCountry = COUNTRY_DIAL_CODES.find(c => c.iso === signupIso) || COUNTRY_DIAL_CODES[0];
 
   const [formData, setFormData] = useState({
@@ -639,6 +640,19 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                     <div className="grid grid-cols-2 gap-2"><input name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required /><input name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required /></div>
                     <input name="email" type="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required />
                     <div className="grid grid-cols-2 gap-2"><input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} required /><input name="pin" type="password" maxLength={4} placeholder="PIN (4)" value={formData.pin} onChange={handleInputChange} className={`${inputClass.replace('pl-9', 'pl-3')} text-center`} required /></div>
+                    <label className="flex items-start gap-2 text-[10px] leading-snug text-white/85 cursor-pointer select-none pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={smsOptIn}
+                        onChange={(e) => setSmsOptIn(e.target.checked)}
+                        className="mt-0.5 rounded border-white/30 bg-black/30 text-blue-500 focus:ring-blue-400 shrink-0"
+                      />
+                      <span>
+                        I agree to receive transactional SMS account alerts and security notifications from {siteName || APP_CONFIG.BANK_NAME}. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help or STOP to opt out. See{' '}
+                        <a href="#terms" className="text-blue-300 underline hover:text-blue-200 font-semibold">Terms &amp; Conditions</a> and{' '}
+                        <a href="#privacy" className="text-blue-300 underline hover:text-blue-200 font-semibold">Privacy Policy</a>.
+                      </span>
+                    </label>
                     <button type="button" onClick={() => {
                       if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || formData.pin.length !== 4) {
                         setError("Please complete all required fields and a 4-digit PIN.");
@@ -701,6 +715,19 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2"><input name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} /><input name="country" placeholder="Country" value={formData.country} onChange={handleInputChange} className={inputClass.replace('pl-9', 'pl-3')} /></div>
+                    <label className="flex items-start gap-2 text-[10px] leading-snug text-white/85 cursor-pointer select-none pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={smsOptIn}
+                        onChange={(e) => setSmsOptIn(e.target.checked)}
+                        className="mt-0.5 rounded border-white/30 bg-black/30 text-blue-500 focus:ring-blue-400 shrink-0"
+                      />
+                      <span>
+                        I agree to receive transactional SMS account alerts and security notifications from {siteName || APP_CONFIG.BANK_NAME}. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help or STOP to opt out. See{' '}
+                        <a href="#terms" className="text-blue-300 underline hover:text-blue-200 font-semibold">Terms &amp; Conditions</a> and{' '}
+                        <a href="#privacy" className="text-blue-300 underline hover:text-blue-200 font-semibold">Privacy Policy</a>.
+                      </span>
+                    </label>
                     <button type="submit" disabled={isLoading} className="w-full py-2.5 bg-emerald-600/80 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] mt-2 flex items-center justify-center gap-2 backdrop-blur-sm border border-emerald-500/30">{isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Complete Registration'}</button>
                     <p className="text-center text-[10px] text-white/90 font-medium pt-1">Have an account? <button type="button" onClick={() => { setSignupStep(1); onSwitch('signin'); }} className="text-white font-bold hover:underline ml-1">Log in</button></p>
                   </div>
@@ -712,6 +739,11 @@ export const Auth: React.FC<AuthProps> = ({ type, authFeedback, initialEmail = '
           </div>
         </div>
         <div className="mt-6 text-center opacity-90"><p className="text-[9px] font-bold text-white/70 uppercase tracking-widest text-shadow-sm drop-shadow-md">Secured by {displayName} ID</p></div>
+        <div className="mt-2 text-center opacity-85 flex items-center justify-center gap-3 text-[10px] font-semibold">
+          <a href="#terms" className="text-white/75 hover:text-white underline transition-colors">Terms &amp; Conditions</a>
+          <span className="text-white/40">&bull;</span>
+          <a href="#privacy" className="text-white/75 hover:text-white underline transition-colors">Privacy Policy</a>
+        </div>
         <div className="mt-2 text-center opacity-70"><p className="text-[9px] font-medium text-white/50">Need help? <a href={`mailto:admin@${displayName.toLowerCase()}mh.com`} className="text-white hover:text-blue-300 underline transition-colors">admin@{displayName.toLowerCase()}mh.com</a></p></div>
       </div>
 

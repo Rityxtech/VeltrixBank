@@ -27,6 +27,7 @@ import { AiAssistant } from './components/AiAssistant';
 import { Profile } from './components/Profile';
 import { KycVerification } from './components/KycVerification';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { PrivacyPolicyPage, TermsOfServicePage } from './components/LegalPages';
 import { Investments } from './components/Investments';
 import { Settings } from './components/Settings';
 import { HomePage } from './components/HomePage';
@@ -514,10 +515,13 @@ function App() {
     const [showSuspendedModal, setShowSuspendedModal] = useState(false);
     const [supportInitialSubject, setSupportInitialSubject] = useState('General Inquiry');
 
-    const [currentView, setCurrentView] = useState<'home' | 'signin' | 'signup' | 'admin_login' | 'support'>(() => {
-        const hash = window.location.hash.substring(1);
+    const [currentView, setCurrentView] = useState<'home' | 'signin' | 'signup' | 'admin_login' | 'support' | 'privacy' | 'terms'>(() => {
+        const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+        if (path === 'privacy') return 'privacy';
+        if (path === 'terms') return 'terms';
+        const hash = window.location.hash.substring(1).split('?')[0];
         if (hash === 'admin-login') return 'admin_login';
-        if (hash === 'signin' || hash === 'signup' || hash === 'support') return hash;
+        if (hash === 'signin' || hash === 'signup' || hash === 'support' || hash === 'privacy' || hash === 'terms') return hash;
         const saved = localStorage.getItem(APP_CONFIG.STORAGE_PREFIX + 'view');
         if (saved === 'admin_login') return 'admin_login';
         return (saved === 'signin' || saved === 'signup' || saved === 'support') ? saved : 'home';
@@ -625,7 +629,7 @@ function App() {
             if (hash === 'admin-login') {
                 setCurrentView('admin_login');
                 localStorage.setItem(APP_CONFIG.STORAGE_PREFIX + 'view', 'admin_login');
-            } else if (hash === 'signin' || hash === 'signup' || hash === 'support') {
+            } else if (hash === 'signin' || hash === 'signup' || hash === 'support' || hash === 'privacy' || hash === 'terms') {
                 setCurrentView(hash);
                 localStorage.setItem(APP_CONFIG.STORAGE_PREFIX + 'view', hash);
             } else {
@@ -1471,6 +1475,14 @@ function App() {
 
     // Public live chat route (accessible without login)
     if (route === 'livechat') return <LiveChat />;
+
+    // Public legal pages (accessible without login for compliance & verification)
+    if (currentView === 'privacy') {
+        return <PrivacyPolicyPage siteName={globalSettings.siteName} logoUrl={globalSettings.siteLogo} onBack={() => { window.location.hash = 'signup'; setCurrentView('signup'); }} onNavigate={(h) => { window.location.hash = h; setCurrentView(h as any); }} />;
+    }
+    if (currentView === 'terms') {
+        return <TermsOfServicePage siteName={globalSettings.siteName} logoUrl={globalSettings.siteLogo} onBack={() => { window.location.hash = 'signup'; setCurrentView('signup'); }} onNavigate={(h) => { window.location.hash = h; setCurrentView(h as any); }} />;
+    }
 
     if (!currentUser) {
         if (currentView === 'home') return <HomePage logoUrl={globalSettings.siteLogo} siteName={globalSettings.siteName} onNavigate={(p, e) => {
