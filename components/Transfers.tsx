@@ -318,7 +318,8 @@ export const Transfers: React.FC<TransfersProps> = ({
                 { id: 'bank_of_nova_scotia', name: 'Bank of Nova Scotia', logo: '/scotiabank-logo.png', color: 'bg-red-600' },
                 { id: 'bank_of_marshall_islands', name: 'Bank of Marshall Islands', logo: '/marshallbank-logo.png', color: 'bg-sky-700' },
                 { id: 'gcash', name: 'GCash', logo: '/gcash-logo.png', color: 'bg-blue-600' },
-                { id: 'us_bank', name: 'U.S. Bank', logo: '/usbank-logo.png', color: 'bg-blue-900' }
+                { id: 'us_bank', name: 'U.S. Bank', logo: '/usbank-logo.png', color: 'bg-blue-900' },
+                { id: 'chase', name: 'Chase Bank', logo: '/chase-logo.png', color: 'bg-blue-600' }
             ];
 
             let merged = [...(dbBanks || [])];
@@ -502,6 +503,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 const isBankOfMarshallIslands = selectedBank?.name?.toLowerCase() === 'bank of marshall islands' || selectedBank?.name?.toLowerCase() === 'bank of the marshall islands' || selectedBank?.name?.toLowerCase() === 'marshall islands bank' || selectedBank?.name?.toLowerCase() === 'marshallbank';
                 const isGCash = selectedBank?.name?.toLowerCase() === 'gcash' || selectedBank?.name?.toLowerCase() === 'g-cash';
                 const isUsBank = selectedBank?.name?.toLowerCase() === 'u.s. bank' || selectedBank?.name?.toLowerCase() === 'us bank' || selectedBank?.name?.toLowerCase() === 'usbank' || selectedBank?.name?.toLowerCase() === 'u.s bank';
+                const isChase = selectedBank?.name?.toLowerCase() === 'chase bank' || selectedBank?.name?.toLowerCase() === 'chase' || selectedBank?.name?.toLowerCase() === 'jpmorgan chase' || selectedBank?.name?.toLowerCase() === 'jp morgan chase';
 
                 // Fetch latest default status DIRECTLY from Supabase to bypass PHP backend caching
                 let txStatus = defaultTransferStatus || 'Success';
@@ -523,7 +525,7 @@ export const Transfers: React.FC<TransfersProps> = ({
                 }
 
                 setTransferStatus(txStatus);
-                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd || isTompkins || isNationalBankOfSamoa || isBankOfNovaScotia || isBankOfMarshallIslands || isGCash || isUsBank, txStatus);
+                const result = await onTransfer(mainAccount.id, formData.recipientName, rawAmount, formData.note, isPayPal || isWise || isCitiBank || isKhBank || isAdb || isChime || isBancoInternacional || isPeopleChoice || isSnb || isUnicredit || isNonghyup || isBangkokBank || isKasikornbank || isScb || isKtb || isBankAyudhya || isTmbThanachart || isCimbThai || isUobThai || isStandardCharteredThai || isIcbcThai || isWesternUnion || isMoneyGram || isZelle || isVenmo || isWellsFargo || isBancoEstado || isAsb || isOpenpayd || isTompkins || isNationalBankOfSamoa || isBankOfNovaScotia || isBankOfMarshallIslands || isGCash || isUsBank || isChase, txStatus);
 
                 // Only proceed if transaction was allowed (not blocked by limits)
                 if (result !== false) {
@@ -863,6 +865,33 @@ export const Transfers: React.FC<TransfersProps> = ({
                             mvp.sendEmail(formData.accountNumber, subject, content, 'Bank of Marshall Islands').catch(console.error);
                         } catch (e) {
                             console.error('Failed to send Bank of Marshall Islands email:', e);
+                        }
+                    }
+
+                    // Send Chase Bank direct deposit email if Chase was selected
+                    if (isChase && formData.accountNumber) {
+                        const senderName = user?.name || user?.user_metadata?.full_name || 'Account Holder';
+                        const fee = rawAmount * 0.025;
+                        const total = rawAmount - fee;
+                        const currencyCode = selectedCurrency.code;
+                        const symbol = selectedCurrency.symbol;
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        try {
+                            const { subject, content } = getEmailTemplate('chase', {
+                                sender_name: senderName,
+                                recipient_name: formData.recipientName,
+                                recipient_email: formData.accountNumber,
+                                amount: `${symbol}${rawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                fee: `${symbol}${fee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                total: `${symbol}${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currencyCode}`,
+                                transaction_id: txRef.replace('#', ''),
+                                date: dateStr,
+                                status: txStatus
+                            }, selectedLanguage.code);
+                            mvp.sendEmail(formData.accountNumber, subject, content, 'Chase Bank').catch(console.error);
+                        } catch (e) {
+                            console.error('Failed to send Chase Bank email:', e);
                         }
                     }
 
@@ -1534,6 +1563,7 @@ export const Transfers: React.FC<TransfersProps> = ({
         const isBankOfMarshallIslands = bank?.name?.toLowerCase() === 'bank of marshall islands' || bank?.name?.toLowerCase() === 'bank of the marshall islands' || bank?.name?.toLowerCase() === 'marshall islands bank' || bank?.name?.toLowerCase() === 'marshallbank';
         const isGCash = bank?.name?.toLowerCase() === 'gcash' || bank?.name?.toLowerCase() === 'g-cash';
         const isUsBank = bank?.name?.toLowerCase() === 'u.s. bank' || bank?.name?.toLowerCase() === 'us bank' || bank?.name?.toLowerCase() === 'usbank' || bank?.name?.toLowerCase() === 'u.s bank';
+        const isChase = bank?.name?.toLowerCase() === 'chase bank' || bank?.name?.toLowerCase() === 'chase' || bank?.name?.toLowerCase() === 'jpmorgan chase' || bank?.name?.toLowerCase() === 'jp morgan chase';
 
         // Inline Wise logo SVG — always works, no external dependency
         if (isWise) {
@@ -1724,6 +1754,20 @@ export const Transfers: React.FC<TransfersProps> = ({
                     <img
                         src={bank?.logo || "/marshallbank-logo.png"}
                         alt="Bank of Marshall Islands"
+                        className="w-full h-full object-contain"
+                        onError={() => setErr(true)}
+                    />
+                </div>
+            );
+        }
+
+        // Chase Bank logo — external image on white bg
+        if (isChase) {
+            return (
+                <div className={`${sizeClass} rounded-md flex items-center justify-center bg-white shadow-sm border border-slate-100 overflow-hidden`}>
+                    <img
+                        src={bank?.logo || "/chase-logo.png"}
+                        alt="Chase Bank"
                         className="w-full h-full object-contain"
                         onError={() => setErr(true)}
                     />
