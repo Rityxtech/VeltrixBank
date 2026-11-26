@@ -30,6 +30,7 @@ export function getBankNameFromSource(source: string): string {
         bank_of_nova_scotia: 'Bank of Nova Scotia',
         bank_of_marshall_islands: 'Bank of Marshall Islands',
         gcash: 'GCash',
+        us_bank: 'U.S. Bank',
     };
     return builtInNames[source] || 'Support Team';
 }
@@ -66,6 +67,7 @@ export function getParentTypeFromSource(source: string): string | null {
         bank_of_nova_scotia: 'bank_of_nova_scotia',
         bank_of_marshall_islands: 'bank_of_marshall_islands',
         gcash: 'gcash',
+        us_bank: 'us_bank',
     };
     return builtInTypes[source] || null;
 }
